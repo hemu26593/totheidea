@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\ActorSource;
 use App\Enums\AuditAction;
+use App\Models\AccessGrant;
 use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
@@ -48,13 +50,25 @@ class AuditLogger
         ?array $oldValues = null,
         ?array $newValues = null,
         ?User $actor = null,
+        ?ActorSource $source = null,
+        ?AccessGrant $accessGrant = null,
     ): AuditLog {
-        $actor ??= Auth::user();
+        $actor ??= $accessGrant === null ? Auth::user() : null;
+
+        // An external write has no user; a system write has neither. Callers
+        // that pass a grant are declaring the write came through it.
+        $source ??= match (true) {
+            $accessGrant !== null => ActorSource::ExternalGrant,
+            $actor !== null => ActorSource::InternalUser,
+            default => ActorSource::System,
+        };
 
         return AuditLog::create([
             'actor_id' => $actor?->getKey(),
             // Denormalised so the trail stays readable after a user is deleted.
             'actor_label' => $actor?->email,
+            'source' => $source,
+            'access_grant_id' => $accessGrant?->getKey(),
             'action' => $action,
             'auditable_type' => $auditable?->getMorphClass(),
             'auditable_id' => $auditable?->getKey(),

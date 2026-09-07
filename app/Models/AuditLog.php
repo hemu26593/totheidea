@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\ActorSource;
 use App\Enums\AuditAction;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -24,6 +25,11 @@ class AuditLog extends Model
     protected $fillable = [
         'actor_id',
         'actor_label',
+        // The source discriminator. Under the hybrid entry model a mutation
+        // may arrive from an external grant with no user at all, so actor_id
+        // alone cannot answer "did staff enter this, or did the owner?".
+        'source',
+        'access_grant_id',
         'action',
         'auditable_type',
         'auditable_id',
@@ -40,6 +46,7 @@ class AuditLog extends Model
     {
         return [
             'action' => AuditAction::class,
+            'source' => ActorSource::class,
             'old_values' => 'array',
             'new_values' => 'array',
             'created_at' => 'datetime',
@@ -65,5 +72,13 @@ class AuditLog extends Model
     public function auditable(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    /**
+     * The scoped grant a write arrived through, when the source was external.
+     */
+    public function accessGrant(): BelongsTo
+    {
+        return $this->belongsTo(AccessGrant::class);
     }
 }
