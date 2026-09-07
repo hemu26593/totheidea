@@ -204,8 +204,12 @@ class SuperAdminSafeguardsTest extends TestCase
         $this->assertTrue($superAdmin->can('settings.manage'), 'Ordinary abilities are granted.');
         $this->assertFalse($superAdmin->can('delete', $superAdmin), 'Guarded abilities fall through to the policy.');
 
+        // Pinned exactly, so an ability cannot be added or dropped without a
+        // deliberate decision. 'approve' joined the list in Phase 0: ADR-014
+        // requires that an AI generation cannot be approved by the user who
+        // generated it, and that check lives in the policy.
         $this->assertSame(
-            ['delete', 'deactivate', 'assignRole'],
+            ['delete', 'deactivate', 'assignRole', 'approve'],
             config('authorization.guarded_abilities'),
         );
     }

@@ -77,6 +77,47 @@ return [
             'assignments.edit',
             'assignments.complete',
             'assignments.archive',
+
+            'day_plans.view',
+            'day_plans.manage',
+
+            'time_grid.manage',
+
+            'mmd.view',
+            'mmd.manage',
+            'mmd.set_targets',
+
+            'fund_plans.view',
+            'fund_plans.manage',
+            'fund_plans.approve',
+
+            'action_items.view',
+            'action_items.manage',
+
+            'positions.manage',
+
+            'hr_policies.manage',
+            'hr_policies.publish',
+        ],
+
+        'External access' => [
+            // Scoped, expiring links. Customers never receive an account.
+            'access_grants.issue',
+            'access_grants.revoke',
+        ],
+
+        'Documents and notes' => [
+            'documents.manage',
+            'notes.manage',
+            // Gates the consultant's private notes. SOW section 6 requires
+            // that participants never see them - a permission check, not a
+            // template condition.
+            'notes.view_internal',
+        ],
+
+        'Notifications' => [
+            'notifications.view',
+            'notifications.manage',
         ],
 
         'Analytics' => [
@@ -149,6 +190,37 @@ return [
             'assignments.complete',
             'assignments.archive',
 
+            'day_plans.view',
+            'day_plans.manage',
+
+            'time_grid.manage',
+
+            'mmd.view',
+            'mmd.manage',
+            'mmd.set_targets',
+
+            'fund_plans.view',
+            'fund_plans.manage',
+            'fund_plans.approve',
+
+            'action_items.view',
+            'action_items.manage',
+
+            'positions.manage',
+
+            'hr_policies.manage',
+            'hr_policies.publish',
+
+            'access_grants.issue',
+            'access_grants.revoke',
+
+            'documents.manage',
+            'notes.manage',
+            'notes.view_internal',
+
+            'notifications.view',
+            'notifications.manage',
+
             'analytics.view',
 
             'reports.view',
@@ -190,6 +262,39 @@ return [
             'assignments.complete',
             // No assignments.archive.
 
+            'day_plans.view',
+            'day_plans.manage',
+
+            'time_grid.manage',
+
+            'mmd.view',
+            'mmd.manage',
+            // No mmd.set_targets: setting a target is an approval-shaped act
+            // and stays with Admin in V1.
+
+            'fund_plans.view',
+            'fund_plans.manage',
+            // No fund_plans.approve.
+
+            'action_items.view',
+            'action_items.manage',
+
+            'positions.manage',
+
+            'hr_policies.manage',
+            // No hr_policies.publish.
+
+            'access_grants.issue',
+            'access_grants.revoke',
+
+            'documents.manage',
+            'notes.manage',
+            'notes.view_internal',
+
+            'notifications.view',
+            // No notifications.manage: retry and suppression change what a
+            // customer receives, so they stay with Admin.
+
             'analytics.view',
             'reports.view',
             // No reports.export: export is a data-exfiltration boundary.
@@ -211,5 +316,9 @@ return [
         'delete',
         'deactivate',
         'assignRole',
+        // AI generation approval. ADR-014 requires that a generator cannot
+        // approve its own output; that check lives in the policy, so
+        // Gate::before must not short-circuit it for a Super Admin.
+        'approve',
     ],
 ];

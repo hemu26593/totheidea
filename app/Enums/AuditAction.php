@@ -7,9 +7,14 @@ namespace App\Enums;
 /**
  * Auditable actions (ADR-013).
  *
- * This phase covers authentication and RBAC only. Customer and BMP domain
- * actions will extend this enum when those modules are built — the audit
- * architecture is deliberately reusable.
+ * The authentication and RBAC cases came from Step 2. The BMP domain cases
+ * below are the set Step 3B section 6.1 requires; they are declared here in
+ * Phase 0 so that every later phase writes through one audit vocabulary
+ * rather than growing a second audit system.
+ *
+ * The audit_logs schema extension that accompanies them — source and
+ * access_grant_id — belongs to Phase 1, because its foreign key needs the
+ * access_grants table.
  */
 enum AuditAction: string
 {
@@ -32,6 +37,47 @@ enum AuditAction: string
     case RoleRevoked = 'user.role_revoked';
     case RolePermissionsChanged = 'role.permissions_changed';
 
+    // Customers and enrolments
+    case CustomerCreated = 'customer.created';
+    case CustomerUpdated = 'customer.updated';
+    case CustomerArchived = 'customer.archived';
+    case CustomerContactConsentChanged = 'customer_contact.consent_changed';
+    case EnrollmentCreated = 'enrollment.created';
+    case EnrollmentWithdrawn = 'enrollment.withdrawn';
+    case EnrollmentCompleted = 'enrollment.completed';
+    case TermsAccepted = 'terms.accepted';
+
+    // External access
+    case AccessGrantIssued = 'access_grant.issued';
+    case AccessGrantUsed = 'access_grant.used';
+    case AccessGrantRevoked = 'access_grant.revoked';
+
+    // Forms, submissions and scoring
+    case FormVersionPublished = 'form_version.published';
+    case SubmissionSubmitted = 'submission.submitted';
+    case SubmissionAmended = 'submission.amended';
+
+    // Sessions and assignments
+    case AttendanceMarked = 'attendance.marked';
+    case AttendanceAmended = 'attendance.amended';
+    case AssignmentAccepted = 'assignment.accepted';
+    case AssignmentReturned = 'assignment.returned';
+
+    // Trackers
+    case MmdEntryAmended = 'mmd_entry.amended';
+    case FundPlanApproved = 'fund_plan.approved';
+
+    // Business systems
+    case HrPolicyPublished = 'hr_policy.published';
+    case HrPolicyAcknowledged = 'hr_policy.acknowledged';
+
+    // Outputs and AI
+    case ReportGenerated = 'report.generated';
+    case ReportExported = 'report.exported';
+    case AiGenerated = 'ai.generated';
+    case AiApproved = 'ai.approved';
+    case AiRejected = 'ai.rejected';
+
     public function label(): string
     {
         return match ($this) {
@@ -48,6 +94,33 @@ enum AuditAction: string
             self::RoleAssigned => 'Role assigned',
             self::RoleRevoked => 'Role revoked',
             self::RolePermissionsChanged => 'Role permissions changed',
+            self::CustomerCreated => 'Customer created',
+            self::CustomerUpdated => 'Customer updated',
+            self::CustomerArchived => 'Customer archived',
+            self::CustomerContactConsentChanged => 'Contact consent changed',
+            self::EnrollmentCreated => 'Enrolment created',
+            self::EnrollmentWithdrawn => 'Enrolment withdrawn',
+            self::EnrollmentCompleted => 'Enrolment completed',
+            self::TermsAccepted => 'Terms accepted',
+            self::AccessGrantIssued => 'Access grant issued',
+            self::AccessGrantUsed => 'Access grant used',
+            self::AccessGrantRevoked => 'Access grant revoked',
+            self::FormVersionPublished => 'Form version published',
+            self::SubmissionSubmitted => 'Submission submitted',
+            self::SubmissionAmended => 'Submission amended',
+            self::AttendanceMarked => 'Attendance marked',
+            self::AttendanceAmended => 'Attendance amended',
+            self::AssignmentAccepted => 'Assignment accepted',
+            self::AssignmentReturned => 'Assignment returned',
+            self::MmdEntryAmended => 'MMD entry amended',
+            self::FundPlanApproved => 'Fund plan approved',
+            self::HrPolicyPublished => 'HR policy published',
+            self::HrPolicyAcknowledged => 'HR policy acknowledged',
+            self::ReportGenerated => 'Report generated',
+            self::ReportExported => 'Report exported',
+            self::AiGenerated => 'AI generation created',
+            self::AiApproved => 'AI generation approved',
+            self::AiRejected => 'AI generation rejected',
         };
     }
 
@@ -63,6 +136,12 @@ enum AuditAction: string
             self::UserDeleted,
             self::UserDeactivated,
             self::LoginBlockedInactive,
+            // External access is the one unauthenticated write path in the
+            // system, so issuing, using and revoking a grant are security
+            // events in the same sense as a role change.
+            self::AccessGrantIssued,
+            self::AccessGrantUsed,
+            self::AccessGrantRevoked,
         ], true);
     }
 }
