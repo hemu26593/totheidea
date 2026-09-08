@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Domain;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -37,6 +38,17 @@ class SchemaIntegrityTest extends TestCase
         // Phase 2 - shared attachments
         'documents',
         'notes',
+        // Phase 3 - form engine, intake and scoring
+        'skill_areas',
+        'form_templates',
+        'form_versions',
+        'form_sections',
+        'questions',
+        'question_options',
+        'form_submissions',
+        'answers',
+        'answer_options',
+        'submission_scores',
     ];
 
     /** @var array<int, string> */
@@ -49,9 +61,6 @@ class SchemaIntegrityTest extends TestCase
 
     /** @var array<int, string> */
     private const LATER_PHASE_TABLES = [
-        'skill_areas', 'form_templates', 'form_versions', 'form_sections',
-        'questions', 'question_options', 'form_submissions', 'answers',
-        'answer_options', 'submission_scores',
         'session_templates', 'session_template_forms', 'session_instances', 'session_attendances',
         'assignment_templates', 'assignment_instances', 'assignment_submissions', 'assignment_reviews',
         'day_plan_items', 'time_grid_entries', 'mmd_entries', 'mmd_targets',
@@ -155,8 +164,8 @@ class SchemaIntegrityTest extends TestCase
     public function the_bmp_migrations_roll_back_and_re_apply(): void
     {
         // A migration that cannot be rolled back is a migration that cannot be
-        // fixed in place on staging. Ten steps: nine tables plus A1.
-        $this->artisan('migrate:rollback', ['--step' => 10])->assertSuccessful();
+        // fixed in place on staging. Twenty steps: nineteen tables plus A1.
+        $this->artisan('migrate:rollback', ['--step' => 20])->assertSuccessful();
 
         foreach (self::BMP_TABLES as $table) {
             $this->assertFalse(Schema::hasTable($table), "[{$table}] should have been rolled back.");
@@ -179,9 +188,9 @@ class SchemaIntegrityTest extends TestCase
     }
 
     #[Test]
-    public function exactly_nine_bmp_tables_exist(): void
+    public function exactly_nineteen_bmp_tables_exist(): void
     {
-        $this->assertCount(9, self::BMP_TABLES);
+        $this->assertCount(19, self::BMP_TABLES);
 
         $all = collect(Schema::getTableListing())
             ->map(fn (string $t): string => str_contains($t, '.') ? explode('.', $t)[1] : $t);
@@ -236,6 +245,67 @@ class SchemaIntegrityTest extends TestCase
         foreach (['source', 'created_by', 'access_grant_id'] as $column) {
             $this->assertTrue(Schema::hasColumn('documents', $column));
         }
+    }
+
+    #[Test]
+    public function the_form_engine_constraints_are_database_constraints(): void
+    {
+        $unique = fn (string $table): Collection => collect(Schema::getIndexes($table))
+            ->filter(fn (array $i): bool => $i['unique'] === true)
+            ->map(fn (array $i): array => $i['columns']);
+
+        // Ambiguous history: two rows claiming to be "version 2" would make a
+        // submission's provenance unresolvable.
+        $this->assertTrue($unique('form_versions')->contains(['form_template_id', 'version_number']));
+        // Deterministic rendering order.
+        $this->assertTrue($unique('form_sections')->contains(['form_version_id', 'position']));
+        $this->assertTrue($unique('questions')->contains(['form_version_id', 'position']));
+        // One machine value per question.
+        $this->assertTrue($unique('question_options')->contains(['question_id', 'value']));
+        // One answer per question per submission.
+        $this->assertTrue($unique('answers')->contains(['form_submission_id', 'question_id']));
+        // The same choice cannot be selected twice.
+        $this->assertTrue($unique('answer_options')->contains(['answer_id', 'question_option_id']));
+    }
+
+    #[Test]
+    public function submission_scores_carry_no_unique_key(): void
+    {
+        // A unique key would forbid the recomputation history this table
+        // exists to keep, and skill_area_id is nullable - which would
+        // reintroduce the NULL-in-unique-index portability trap.
+        $unique = collect(Schema::getIndexes('submission_scores'))
+            ->filter(fn (array $i): bool => $i['unique'] === true && $i['columns'] !== ['id']);
+
+        $this->assertCount(0, $unique);
+    }
+
+    #[Test]
+    public function a_question_has_two_mandatory_parents(): void
+    {
+        $columns = collect(Schema::getColumns('questions'))->keyBy('name');
+
+        $this->assertFalse($columns['form_version_id']['nullable'], 'form_version_id must be NOT NULL.');
+        $this->assertFalse($columns['form_section_id']['nullable'], 'form_section_id must be NOT NULL.');
+
+        $fks = collect(Schema::getForeignKeys('questions'))
+            ->mapWithKeys(fn (array $fk): array => [$fk['columns'][0] => $fk['foreign_table']]);
+
+        $this->assertSame('form_versions', $fks['form_version_id']);
+        $this->assertSame('form_sections', $fks['form_section_id']);
+    }
+
+    #[Test]
+    public function a_submission_binds_to_a_version_not_a_template(): void
+    {
+        $fks = collect(Schema::getForeignKeys('form_submissions'))
+            ->mapWithKeys(fn (array $fk): array => [$fk['columns'][0] => $fk['foreign_table']]);
+
+        $this->assertSame('form_versions', $fks['form_version_id']);
+        $this->assertFalse(
+            Schema::hasColumn('form_submissions', 'form_template_id'),
+            'A submission must bind to a version; a template column would invite resolving "the current version".'
+        );
     }
 
     #[Test]
