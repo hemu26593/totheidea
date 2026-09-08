@@ -83,6 +83,13 @@ enum AuditAction: string
 
     // Trackers
     case MmdEntryAmended = 'mmd_entry.amended';
+    // Step 3B, table 31: "audit_logs on change". A revised target changes
+    // every target-versus-actual conclusion drawn after it, so what it was
+    // must survive.
+    case MmdTargetSet = 'mmd_target.set';
+    // Step 3B, table 29: "Amendable with audit - actuals arrive after
+    // planning."
+    case TimeGridAmended = 'time_grid_entry.amended';
     case FundPlanApproved = 'fund_plan.approved';
 
     // Business systems
@@ -140,6 +147,8 @@ enum AuditAction: string
             self::AssignmentAccepted => 'Assignment accepted',
             self::AssignmentReturned => 'Assignment returned',
             self::MmdEntryAmended => 'MMD entry amended',
+            self::MmdTargetSet => 'MMD target set',
+            self::TimeGridAmended => 'Time grid entry amended',
             self::FundPlanApproved => 'Fund plan approved',
             self::HrPolicyPublished => 'HR policy published',
             self::HrPolicyAcknowledged => 'HR policy acknowledged',

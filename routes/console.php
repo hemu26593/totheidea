@@ -32,3 +32,22 @@ Schedule::command('bmp:notifications:sweep')
     ->hourly()
     ->withoutOverlapping()
     ->runInBackground();
+
+/*
+|--------------------------------------------------------------------------
+| Day plan carry-forward
+|--------------------------------------------------------------------------
+|
+| "Unfinished tasks move to the next day automatically." Just after midnight,
+| so a participant opening the app in the morning sees yesterday's unfinished
+| work waiting on today.
+|
+| Running it twice is harmless by design: the sweep only sees `planned` items
+| and settles each original as it copies it, so a retry cannot duplicate a
+| task.
+|
+*/
+Schedule::command('bmp:day-plans:carry-forward')
+    ->dailyAt('00:15')
+    ->withoutOverlapping()
+    ->runInBackground();

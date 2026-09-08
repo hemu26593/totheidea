@@ -62,6 +62,14 @@ class SchemaIntegrityTest extends TestCase
         // built here because nothing in the notification architecture depends
         // on the trackers).
         'notification_dispatches',
+        // Phase 6 - the trackers
+        'day_plan_items',
+        'time_grid_entries',
+        'mmd_entries',
+        'mmd_targets',
+        'fund_plans',
+        'fund_plan_lines',
+        'action_items',
     ];
 
     /** @var array<int, string> */
@@ -74,8 +82,6 @@ class SchemaIntegrityTest extends TestCase
 
     /** @var array<int, string> */
     private const LATER_PHASE_TABLES = [
-        'day_plan_items', 'time_grid_entries', 'mmd_entries', 'mmd_targets',
-        'fund_plans', 'fund_plan_lines', 'action_items',
         'positions', 'hr_policies', 'hr_policy_acknowledgements',
         'report_artifacts',
         'ai_prompt_versions', 'ai_generations', 'ai_approvals',
@@ -175,9 +181,9 @@ class SchemaIntegrityTest extends TestCase
     public function the_bmp_migrations_roll_back_and_re_apply(): void
     {
         // A migration that cannot be rolled back is a migration that cannot be
-        // fixed in place on staging. Twenty-nine steps: twenty-eight tables
+        // fixed in place on staging. Thirty-six steps: thirty-five tables
         // plus A1.
-        $this->artisan('migrate:rollback', ['--step' => 29])->assertSuccessful();
+        $this->artisan('migrate:rollback', ['--step' => 36])->assertSuccessful();
 
         foreach (self::BMP_TABLES as $table) {
             $this->assertFalse(Schema::hasTable($table), "[{$table}] should have been rolled back.");
@@ -200,9 +206,9 @@ class SchemaIntegrityTest extends TestCase
     }
 
     #[Test]
-    public function exactly_twenty_eight_bmp_tables_exist(): void
+    public function exactly_thirty_five_bmp_tables_exist(): void
     {
-        $this->assertCount(28, self::BMP_TABLES);
+        $this->assertCount(35, self::BMP_TABLES);
 
         $all = collect(Schema::getTableListing())
             ->map(fn (string $t): string => str_contains($t, '.') ? explode('.', $t)[1] : $t);

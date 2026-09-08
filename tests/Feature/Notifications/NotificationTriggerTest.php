@@ -15,6 +15,7 @@ use App\Models\Customer;
 use App\Models\CustomerContact;
 use App\Models\Enrollment;
 use App\Models\FormSubmission;
+use App\Models\MmdEntry;
 use App\Models\NotificationDispatch;
 use App\Models\SessionInstance;
 use App\Models\User;
@@ -305,12 +306,15 @@ class NotificationTriggerTest extends TestCase
     // --- 5 and 6. Blocked on Phase 6 ---------------------------------------
 
     #[Test]
-    public function trigger_five_defers_on_the_missing_table_and_the_open_cadence(): void
+    public function trigger_five_still_defers_on_the_open_cadence(): void
     {
+        // Phase 6 built mmd_entries, so the build-order half of this
+        // dependency is gone. [L6] is not: "not filled today" presupposes a
+        // daily expectation that has not been confirmed, and a weekly
+        // dashboard would make a daily reminder wrong rather than early.
         $reason = $this->trigger(Triggers\DailyDashboardMissingTrigger::class)->unresolvedDependency();
 
         $this->assertNotNull($reason);
-        $this->assertStringContainsString('mmd_entries', $reason);
         $this->assertStringContainsString('[L6]', $reason);
     }
 
@@ -322,13 +326,68 @@ class NotificationTriggerTest extends TestCase
     }
 
     #[Test]
-    public function trigger_six_defers_on_the_missing_table(): void
+    public function trigger_six_runs_now_that_the_table_exists(): void
     {
-        $reason = $this->trigger(Triggers\DashboardMissedThreeDaysTrigger::class)->unresolvedDependency();
+        // Phase 5 deferred this on the absence of mmd_entries alone. Phase 6
+        // built it, so the trigger is live - with no change to its contract.
+        $this->assertNull(
+            $this->trigger(Triggers\DashboardMissedThreeDaysTrigger::class)->unresolvedDependency(),
+        );
+    }
 
-        $this->assertNotNull($reason);
-        $this->assertStringContainsString('mmd_entries', $reason);
-        $this->assertStringContainsString('Phase 6', $reason);
+    #[Test]
+    public function trigger_six_finds_a_three_day_silence(): void
+    {
+        [$customer, , , $batch] = $this->enrolledBusiness();
+        $consultant = $this->staff(['email' => 'gap@example.test']);
+        SessionInstance::factory()->create([
+            'batch_id' => $batch->getKey(),
+            'conducted_by' => $consultant->getKey(),
+        ]);
+
+        // The dashboard was live, then went quiet.
+        MmdEntry::factory()->create([
+            'customer_id' => $customer->getKey(),
+            'entry_date' => '2026-09-27',
+        ]);
+
+        $found = $this->candidates(Triggers\DashboardMissedThreeDaysTrigger::class, '2026-10-01');
+
+        $this->assertCount(1, $found);
+        $this->assertSame(NotificationDispatch::RECIPIENT_USER, $found[0]->recipientType());
+        $this->assertSame((int) $customer->getKey(), $found[0]->customerId);
+    }
+
+    #[Test]
+    public function trigger_six_is_silent_when_the_dashboard_is_being_filled(): void
+    {
+        [$customer, , , $batch] = $this->enrolledBusiness();
+        SessionInstance::factory()->create([
+            'batch_id' => $batch->getKey(),
+            'conducted_by' => $this->staff()->getKey(),
+        ]);
+
+        MmdEntry::factory()->create([
+            'customer_id' => $customer->getKey(),
+            'entry_date' => '2026-09-30',
+        ]);
+
+        $this->assertCount(0, $this->candidates(Triggers\DashboardMissedThreeDaysTrigger::class, '2026-10-01'));
+    }
+
+    #[Test]
+    public function trigger_six_does_not_chase_a_dashboard_that_never_went_live(): void
+    {
+        // A gap presupposes a prior presence. A business that has never
+        // recorded anything has not missed three days; its dashboard has not
+        // started.
+        [, , , $batch] = $this->enrolledBusiness();
+        SessionInstance::factory()->create([
+            'batch_id' => $batch->getKey(),
+            'conducted_by' => $this->staff()->getKey(),
+        ]);
+
+        $this->assertCount(0, $this->candidates(Triggers\DashboardMissedThreeDaysTrigger::class, '2026-10-01'));
     }
 
     #[Test]
@@ -425,8 +484,9 @@ class NotificationTriggerTest extends TestCase
 
         $this->assertSame(1, $result->totalCreated());
         $this->assertArrayHasKey('daily_dashboard_missing', $result->deferred);
-        $this->assertArrayHasKey('dashboard_missed_three_days', $result->deferred);
         $this->assertArrayHasKey('attendance_below_threshold', $result->deferred);
+        // No longer deferred: Phase 6 built mmd_entries.
+        $this->assertArrayNotHasKey('dashboard_missed_three_days', $result->deferred);
     }
 
     #[Test]
