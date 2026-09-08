@@ -99,6 +99,12 @@ enum AuditAction: string
     // Outputs and AI
     case ReportGenerated = 'report.generated';
     case ReportExported = 'report.exported';
+    // Step 3B table 40 requires an audit entry when a prompt version is
+    // published. The Step 3B section 6.1 list names only generated/approved/
+    // rejected, so this fourth action is added to satisfy table 40's own
+    // requirement rather than reuse ai.generated, which would make the audit
+    // trail report a prompt publication as an AI invocation.
+    case AiPromptPublished = 'ai.prompt_published';
     case AiGenerated = 'ai.generated';
     case AiApproved = 'ai.approved';
     case AiRejected = 'ai.rejected';
@@ -154,6 +160,7 @@ enum AuditAction: string
             self::HrPolicyAcknowledged => 'HR policy acknowledged',
             self::ReportGenerated => 'Report generated',
             self::ReportExported => 'Report exported',
+            self::AiPromptPublished => 'AI prompt version published',
             self::AiGenerated => 'AI generation created',
             self::AiApproved => 'AI generation approved',
             self::AiRejected => 'AI generation rejected',

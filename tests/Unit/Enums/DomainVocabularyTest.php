@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace Tests\Unit\Enums;
 
 use App\Enums\ActorSource;
+use App\Enums\AiApprovalDecision;
+use App\Enums\AiGenerationStatus;
+use App\Enums\AiPromptStatus;
+use App\Enums\AiPurpose;
 use App\Enums\BehaviourDimension;
 use App\Enums\BusinessFunction;
 use App\Enums\DueClassification;
@@ -188,13 +192,39 @@ class DomainVocabularyTest extends TestCase
     }
 
     #[Test]
-    public function exactly_eleven_domain_enums_exist(): void
+    public function exactly_fifteen_domain_enums_exist(): void
     {
-        // Eleven domain enums, plus UserRole and AuditAction from Step 2.
-        // A twelfth domain enum means vocabulary was reified that Step 3B
-        // deliberately did not model - see the two guard tests below.
+        // Fifteen domain enums, plus UserRole and AuditAction from Step 2.
+        // A sixteenth means vocabulary was reified that Step 3B deliberately
+        // did not model - see the two guard tests above.
+        //
+        // The four AI enums are all Step 3B vocabulary: three are the status
+        // and decision sets the frozen schema states for tables 40-42, and
+        // AiPurpose is the `purpose` column's stated values. None invents a
+        // concept the specification does not name.
         $files = glob(dirname(__DIR__, 3).'/app/Enums/*.php');
 
-        $this->assertCount(13, $files, 'Expected 11 domain enums plus UserRole and AuditAction.');
+        $this->assertCount(17, $files, 'Expected 15 domain enums plus UserRole and AuditAction.');
+    }
+
+    #[Test]
+    public function the_ai_vocabulary_is_exactly_what_the_frozen_schema_states(): void
+    {
+        // Each set is copied from Step 3B tables 40-42 and nothing is added.
+        // A value not in the specification would be a business rule invented
+        // in an enum, which is the quietest place to invent one.
+        $this->assertSame(
+            ['draft', 'published', 'archived'],
+            AiPromptStatus::values(),
+        );
+
+        $this->assertSame(
+            ['pending', 'succeeded', 'failed', 'awaiting_approval', 'approved', 'rejected'],
+            AiGenerationStatus::values(),
+        );
+
+        $this->assertSame(['approved', 'rejected'], AiApprovalDecision::values());
+
+        $this->assertSame(['form_draft', 'narrative', 'summary'], AiPurpose::values());
     }
 }

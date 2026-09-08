@@ -26,6 +26,20 @@ class CustomerIsolationException extends RuntimeException
         );
     }
 
+    /**
+     * A context assembled for one customer was used to generate against
+     * another. The only way this can happen is a caller mixing the two, and
+     * it is refused rather than written.
+     */
+    public static function contextCustomerMismatch(int $contextCustomerId, int $namedCustomerId): self
+    {
+        return new self(sprintf(
+            'Refused: AI context was assembled for customer %d but the generation names customer %d.',
+            $contextCustomerId,
+            $namedCustomerId,
+        ));
+    }
+
     public static function unverifiableSubject(string $subjectType): self
     {
         return new self(

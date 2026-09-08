@@ -76,6 +76,10 @@ class SchemaIntegrityTest extends TestCase
         'hr_policy_acknowledgements',
         // Phase 8 - what was delivered
         'report_artifacts',
+        // Phase 9 - AI as a proposer
+        'ai_prompt_versions',
+        'ai_generations',
+        'ai_approvals',
     ];
 
     /** @var array<int, string> */
@@ -88,7 +92,6 @@ class SchemaIntegrityTest extends TestCase
 
     /** @var array<int, string> */
     private const LATER_PHASE_TABLES = [
-        'ai_prompt_versions', 'ai_generations', 'ai_approvals',
         // Deferred client decisions - these must not appear at all.
         'end_customers', 'end_customer_interactions',
     ];
@@ -185,9 +188,9 @@ class SchemaIntegrityTest extends TestCase
     public function the_bmp_migrations_roll_back_and_re_apply(): void
     {
         // A migration that cannot be rolled back is a migration that cannot be
-        // fixed in place on staging. Forty steps: thirty-nine tables
+        // fixed in place on staging. Forty-three steps: forty-two tables
         // plus A1.
-        $this->artisan('migrate:rollback', ['--step' => 40])->assertSuccessful();
+        $this->artisan('migrate:rollback', ['--step' => 43])->assertSuccessful();
 
         foreach (self::BMP_TABLES as $table) {
             $this->assertFalse(Schema::hasTable($table), "[{$table}] should have been rolled back.");
@@ -210,9 +213,9 @@ class SchemaIntegrityTest extends TestCase
     }
 
     #[Test]
-    public function exactly_thirty_nine_bmp_tables_exist(): void
+    public function exactly_forty_two_bmp_tables_exist(): void
     {
-        $this->assertCount(39, self::BMP_TABLES);
+        $this->assertCount(42, self::BMP_TABLES);
 
         $all = collect(Schema::getTableListing())
             ->map(fn (string $t): string => str_contains($t, '.') ? explode('.', $t)[1] : $t);

@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Domain\Ai\Contracts\AiProvider;
+use App\Domain\Ai\Providers\AnthropicMessagesProvider;
+use App\Domain\Ai\Providers\UnconfiguredAiProvider;
 use App\Domain\Notifications\Contracts\ChannelDispatcher;
 use App\Domain\Notifications\UnconfiguredChannelDispatcher;
+use App\Exceptions\AiProviderNotConfiguredException;
 use App\Listeners\RecordAuthenticationAudit;
 use App\Models\User;
 use App\Policies\UserPolicy;
@@ -19,6 +23,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->registerNotificationChannel();
+        $this->registerAiProvider();
     }
 
     public function boot(): void
@@ -56,6 +61,32 @@ class AppServiceProvider extends ServiceProvider
     private function registerNotificationChannel(): void
     {
         $this->app->bind(ChannelDispatcher::class, UnconfiguredChannelDispatcher::class);
+    }
+
+    /**
+     * The transport seam for AI.
+     *
+     * DEFAULTS TO REFUSING. With no AI_PROVIDER configured the application
+     * binds a provider that throws, so an unconfigured environment fails
+     * clearly at the point of use rather than producing text from nowhere.
+     *
+     * There is deliberately no 'fake' or 'echo' driver. Production code does
+     * not fabricate AI responses; a test that needs one binds its own double,
+     * where it cannot be reached by a stray environment variable.
+     *
+     * Swapping the driver is the whole change needed to start generating.
+     */
+    private function registerAiProvider(): void
+    {
+        $this->app->bind(AiProvider::class, function (): AiProvider {
+            return match ((string) config('ai.provider', 'null')) {
+                'null', '' => new UnconfiguredAiProvider,
+                'anthropic' => $this->app->make(AnthropicMessagesProvider::class),
+                default => throw AiProviderNotConfiguredException::unknownProvider(
+                    (string) config('ai.provider'),
+                ),
+            };
+        });
     }
 
     private function registerSuperAdminGate(): void
