@@ -7,6 +7,7 @@ namespace App\Domain\Shared;
 use App\Exceptions\CustomerIsolationException;
 use App\Models\Customer;
 use App\Models\Enrollment;
+use App\Models\HrPolicyAcknowledgement;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -48,6 +49,20 @@ class SubjectOwnership
 
         if ($subject instanceof Enrollment) {
             return (int) $subject->customer_id;
+        }
+
+        // An acknowledgement carries neither a customer nor an enrolment: it
+        // inherits its isolation through the policy it signs off. Resolved
+        // deliberately here rather than by adding a denormalised column,
+        // because the policy is the only thing that decides whose it is.
+        if ($subject instanceof HrPolicyAcknowledgement) {
+            $policy = $subject->hrPolicy()->first();
+
+            if ($policy === null) {
+                throw CustomerIsolationException::unverifiableSubject($subject->getMorphClass());
+            }
+
+            return (int) $policy->customer_id;
         }
 
         $customerId = $subject->getAttribute('customer_id');
