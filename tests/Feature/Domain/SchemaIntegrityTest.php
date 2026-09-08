@@ -11,7 +11,7 @@ use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 /**
- * The Phase 1 schema: what must exist, and what must NOT exist yet.
+ * The schema at the current phase: what must exist, and what must NOT exist yet.
  *
  * The negative assertions matter as much as the positive ones. A later-phase
  * table appearing early means the build order was skipped, and build order is
@@ -49,6 +49,15 @@ class SchemaIntegrityTest extends TestCase
         'answers',
         'answer_options',
         'submission_scores',
+        // Phase 4 - sessions, assignments and attendance
+        'session_templates',
+        'session_template_forms',
+        'session_instances',
+        'session_attendances',
+        'assignment_templates',
+        'assignment_instances',
+        'assignment_submissions',
+        'assignment_reviews',
     ];
 
     /** @var array<int, string> */
@@ -61,8 +70,6 @@ class SchemaIntegrityTest extends TestCase
 
     /** @var array<int, string> */
     private const LATER_PHASE_TABLES = [
-        'session_templates', 'session_template_forms', 'session_instances', 'session_attendances',
-        'assignment_templates', 'assignment_instances', 'assignment_submissions', 'assignment_reviews',
         'day_plan_items', 'time_grid_entries', 'mmd_entries', 'mmd_targets',
         'fund_plans', 'fund_plan_lines', 'action_items',
         'positions', 'hr_policies', 'hr_policy_acknowledgements',
@@ -164,8 +171,9 @@ class SchemaIntegrityTest extends TestCase
     public function the_bmp_migrations_roll_back_and_re_apply(): void
     {
         // A migration that cannot be rolled back is a migration that cannot be
-        // fixed in place on staging. Twenty steps: nineteen tables plus A1.
-        $this->artisan('migrate:rollback', ['--step' => 20])->assertSuccessful();
+        // fixed in place on staging. Twenty-eight steps: twenty-seven tables
+        // plus A1.
+        $this->artisan('migrate:rollback', ['--step' => 28])->assertSuccessful();
 
         foreach (self::BMP_TABLES as $table) {
             $this->assertFalse(Schema::hasTable($table), "[{$table}] should have been rolled back.");
@@ -188,9 +196,9 @@ class SchemaIntegrityTest extends TestCase
     }
 
     #[Test]
-    public function exactly_nineteen_bmp_tables_exist(): void
+    public function exactly_twenty_seven_bmp_tables_exist(): void
     {
-        $this->assertCount(19, self::BMP_TABLES);
+        $this->assertCount(27, self::BMP_TABLES);
 
         $all = collect(Schema::getTableListing())
             ->map(fn (string $t): string => str_contains($t, '.') ? explode('.', $t)[1] : $t);

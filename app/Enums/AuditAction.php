@@ -58,8 +58,22 @@ enum AuditAction: string
     case SubmissionAmended = 'submission.amended';
 
     // Sessions and assignments
+    //
+    // Step 3B requires an audit entry on curriculum change, on schedule
+    // change, cancellation and completion, and on assignment release and
+    // closure. The four Step 2 cases below cover only marking and reviewing,
+    // so the remaining events are named here rather than logged under a
+    // borrowed action.
+    case CurriculumChanged = 'curriculum.changed';
+    case SessionScheduled = 'session.scheduled';
+    case SessionRescheduled = 'session.rescheduled';
+    case SessionCompleted = 'session.completed';
+    case SessionCancelled = 'session.cancelled';
     case AttendanceMarked = 'attendance.marked';
     case AttendanceAmended = 'attendance.amended';
+    case AssignmentReleased = 'assignment.released';
+    case AssignmentClosed = 'assignment.closed';
+    case AssignmentSubmitted = 'assignment.submitted';
     case AssignmentAccepted = 'assignment.accepted';
     case AssignmentReturned = 'assignment.returned';
 
@@ -108,8 +122,16 @@ enum AuditAction: string
             self::FormVersionPublished => 'Form version published',
             self::SubmissionSubmitted => 'Submission submitted',
             self::SubmissionAmended => 'Submission amended',
+            self::CurriculumChanged => 'Curriculum changed',
+            self::SessionScheduled => 'Session scheduled',
+            self::SessionRescheduled => 'Session rescheduled',
+            self::SessionCompleted => 'Session completed',
+            self::SessionCancelled => 'Session cancelled',
             self::AttendanceMarked => 'Attendance marked',
             self::AttendanceAmended => 'Attendance amended',
+            self::AssignmentReleased => 'Assignment released',
+            self::AssignmentClosed => 'Assignment closed',
+            self::AssignmentSubmitted => 'Assignment submitted',
             self::AssignmentAccepted => 'Assignment accepted',
             self::AssignmentReturned => 'Assignment returned',
             self::MmdEntryAmended => 'MMD entry amended',
