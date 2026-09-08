@@ -51,6 +51,10 @@ enum AuditAction: string
     case AccessGrantIssued = 'access_grant.issued';
     case AccessGrantUsed = 'access_grant.used';
     case AccessGrantRevoked = 'access_grant.revoked';
+    // A refused redemption. The caller is told nothing about why; staff can
+    // see it here. A security path with no record of its failures is a blind
+    // spot, and this is the only unauthenticated write path in the system.
+    case AccessGrantDenied = 'access_grant.denied';
 
     // Forms, submissions and scoring
     case FormVersionPublished = 'form_version.published';
@@ -119,6 +123,7 @@ enum AuditAction: string
             self::AccessGrantIssued => 'Access grant issued',
             self::AccessGrantUsed => 'Access grant used',
             self::AccessGrantRevoked => 'Access grant revoked',
+            self::AccessGrantDenied => 'Access grant refused',
             self::FormVersionPublished => 'Form version published',
             self::SubmissionSubmitted => 'Submission submitted',
             self::SubmissionAmended => 'Submission amended',
@@ -164,6 +169,7 @@ enum AuditAction: string
             self::AccessGrantIssued,
             self::AccessGrantUsed,
             self::AccessGrantRevoked,
+            self::AccessGrantDenied,
         ], true);
     }
 }

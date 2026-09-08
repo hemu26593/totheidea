@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Domain\Notifications\Contracts\ChannelDispatcher;
+use App\Domain\Notifications\UnconfiguredChannelDispatcher;
 use App\Listeners\RecordAuthenticationAudit;
 use App\Models\User;
 use App\Policies\UserPolicy;
@@ -16,7 +18,7 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        $this->registerNotificationChannel();
     }
 
     public function boot(): void
@@ -40,6 +42,22 @@ class AppServiceProvider extends ServiceProvider
      * exist precisely to constrain Super Admins. Those abilities fall through
      * to the policy instead (ADR-012).
      */
+    /**
+     * The delivery seam for notifications.
+     *
+     * Bound to a dispatcher that REFUSES. Every part of the notification
+     * system above it is finished; no provider is wired, and WhatsApp and paid
+     * messaging are out of scope for this phase. A no-op that reported success
+     * would put false sends in notification_dispatches, which is the one table
+     * that answers "did we actually contact this business?".
+     *
+     * Swapping this binding is the whole change needed to start delivering.
+     */
+    private function registerNotificationChannel(): void
+    {
+        $this->app->bind(ChannelDispatcher::class, UnconfiguredChannelDispatcher::class);
+    }
+
     private function registerSuperAdminGate(): void
     {
         Gate::before(function (User $user, string $ability): ?bool {

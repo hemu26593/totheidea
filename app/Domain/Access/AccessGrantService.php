@@ -21,9 +21,9 @@ use InvalidArgumentException;
 /**
  * Issues and revokes scoped external access grants.
  *
- * Phase 1 implements the grant infrastructure only. REDEMPTION IS PHASE 5 -
- * there is deliberately no method here that consumes a token, and no route
- * accepts one yet.
+ * Issuing only. Consuming a token is AccessGrantRedeemer's job, deliberately:
+ * the code that mints a capability and the code that spends one should not be
+ * able to borrow each other's assumptions.
  *
  * A grant carries a capability, not an identity. It never creates an account,
  * a password or a session, and its scope is always the quadruple:
@@ -37,7 +37,10 @@ class AccessGrantService
 {
     private const TOKEN_BYTES = 32;
 
-    public function __construct(private readonly AuditLogger $audit) {}
+    public function __construct(
+        private readonly AuditLogger $audit,
+        private readonly GrantScope $scope,
+    ) {}
 
     /**
      * Issue a grant.
@@ -66,7 +69,7 @@ class AccessGrantService
         }
 
         $this->assertEnrollmentBelongsToCustomer($enrollment, $customer);
-        $this->assertSubjectIsInScope($subject, $customer, $enrollment);
+        $this->scope->assertInScope($subject, $customer, $enrollment);
 
         if ($contact !== null) {
             $this->assertContactBelongsToCustomer($contact, $customer);
@@ -181,52 +184,6 @@ class AccessGrantService
                 'contact '.$contact->getKey(),
                 'customer '.$customer->getKey(),
                 'customer '.$contact->customer_id,
-            );
-        }
-    }
-
-    /**
-     * The isolation boundary for external access: a grant's subject must
-     * resolve to the same customer and enrolment as the grant itself.
-     *
-     * Fails CLOSED. A subject whose ownership cannot be established is
-     * refused rather than assumed safe, so a later phase that adds a new
-     * subject type must extend this method deliberately.
-     */
-    private function assertSubjectIsInScope(Model $subject, Customer $customer, Enrollment $enrollment): void
-    {
-        if ($subject instanceof Enrollment) {
-            if ((int) $subject->getKey() !== (int) $enrollment->getKey()) {
-                throw CustomerIsolationException::mismatch(
-                    'subject enrolment '.$subject->getKey(),
-                    'enrolment '.$enrollment->getKey(),
-                    'enrolment '.$subject->getKey(),
-                );
-            }
-
-            return;
-        }
-
-        $subjectEnrollmentId = $subject->getAttribute('enrollment_id');
-        $subjectCustomerId = $subject->getAttribute('customer_id');
-
-        if ($subjectEnrollmentId === null && $subjectCustomerId === null) {
-            throw CustomerIsolationException::unverifiableSubject($subject->getMorphClass());
-        }
-
-        if ($subjectEnrollmentId !== null && (int) $subjectEnrollmentId !== (int) $enrollment->getKey()) {
-            throw CustomerIsolationException::mismatch(
-                'subject '.$subject->getMorphClass(),
-                'enrolment '.$enrollment->getKey(),
-                'enrolment '.$subjectEnrollmentId,
-            );
-        }
-
-        if ($subjectCustomerId !== null && (int) $subjectCustomerId !== (int) $customer->getKey()) {
-            throw CustomerIsolationException::mismatch(
-                'subject '.$subject->getMorphClass(),
-                'customer '.$customer->getKey(),
-                'customer '.$subjectCustomerId,
             );
         }
     }
