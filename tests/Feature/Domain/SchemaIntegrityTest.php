@@ -20,8 +20,13 @@ class SchemaIntegrityTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @var array<int, string> */
-    private const PHASE_ONE_TABLES = [
+    /**
+     * Every BMP table that should exist at the current phase.
+     *
+     * @var array<int, string>
+     */
+    private const BMP_TABLES = [
+        // Phase 1 - core spine and access grants
         'programs',
         'batches',
         'customers',
@@ -29,6 +34,9 @@ class SchemaIntegrityTest extends TestCase
         'enrollments',
         'access_grants',
         'terms_acceptances',
+        // Phase 2 - shared attachments
+        'documents',
+        'notes',
     ];
 
     /** @var array<int, string> */
@@ -41,7 +49,6 @@ class SchemaIntegrityTest extends TestCase
 
     /** @var array<int, string> */
     private const LATER_PHASE_TABLES = [
-        'documents', 'notes',
         'skill_areas', 'form_templates', 'form_versions', 'form_sections',
         'questions', 'question_options', 'form_submissions', 'answers',
         'answer_options', 'submission_scores',
@@ -57,9 +64,9 @@ class SchemaIntegrityTest extends TestCase
     ];
 
     #[Test]
-    public function every_phase_one_table_exists(): void
+    public function every_expected_bmp_table_exists(): void
     {
-        foreach (self::PHASE_ONE_TABLES as $table) {
+        foreach (self::BMP_TABLES as $table) {
             $this->assertTrue(Schema::hasTable($table), "Expected table [{$table}].");
         }
     }
@@ -145,13 +152,13 @@ class SchemaIntegrityTest extends TestCase
     }
 
     #[Test]
-    public function the_phase_one_migrations_roll_back_and_re_apply(): void
+    public function the_bmp_migrations_roll_back_and_re_apply(): void
     {
         // A migration that cannot be rolled back is a migration that cannot be
-        // fixed in place on staging. Eight steps: seven tables plus A1.
-        $this->artisan('migrate:rollback', ['--step' => 8])->assertSuccessful();
+        // fixed in place on staging. Ten steps: nine tables plus A1.
+        $this->artisan('migrate:rollback', ['--step' => 10])->assertSuccessful();
 
-        foreach (self::PHASE_ONE_TABLES as $table) {
+        foreach (self::BMP_TABLES as $table) {
             $this->assertFalse(Schema::hasTable($table), "[{$table}] should have been rolled back.");
         }
 
@@ -163,12 +170,72 @@ class SchemaIntegrityTest extends TestCase
 
         $this->artisan('migrate')->assertSuccessful();
 
-        foreach (self::PHASE_ONE_TABLES as $table) {
+        foreach (self::BMP_TABLES as $table) {
             $this->assertTrue(Schema::hasTable($table), "[{$table}] should have been re-applied.");
         }
 
         $this->assertTrue(Schema::hasColumn('audit_logs', 'source'));
         $this->assertTrue(Schema::hasColumn('audit_logs', 'access_grant_id'));
+    }
+
+    #[Test]
+    public function exactly_nine_bmp_tables_exist(): void
+    {
+        $this->assertCount(9, self::BMP_TABLES);
+
+        $all = collect(Schema::getTableListing())
+            ->map(fn (string $t): string => str_contains($t, '.') ? explode('.', $t)[1] : $t);
+
+        $unexpected = $all
+            ->reject(fn (string $t): bool => in_array($t, self::BMP_TABLES, true))
+            ->reject(fn (string $t): bool => in_array($t, self::FOUNDATION_TABLES, true))
+            ->values();
+
+        $this->assertSame([], $unexpected->all(), 'No table beyond the current phase may exist.');
+    }
+
+    #[Test]
+    public function the_polymorphic_attachment_indexes_exist(): void
+    {
+        // Mandatory: without them there is no way to retrieve a subject's
+        // attachments, since a polymorphic column carries no foreign key.
+        $documentIndexes = collect(Schema::getIndexes('documents'))->map(fn (array $i): array => $i['columns']);
+        $noteIndexes = collect(Schema::getIndexes('notes'))->map(fn (array $i): array => $i['columns']);
+
+        $this->assertTrue($documentIndexes->contains(['documentable_type', 'documentable_id']));
+        $this->assertTrue($noteIndexes->contains(['notable_type', 'notable_id']));
+        // Visibility filtering on every external-facing read.
+        $this->assertTrue($noteIndexes->contains(['is_internal']));
+    }
+
+    #[Test]
+    public function attachments_carry_no_foreign_key_on_their_subject(): void
+    {
+        // Polymorphic by design. Ownership is resolved in application code,
+        // which is why SubjectOwnership fails closed.
+        foreach (Schema::getForeignKeys('documents') as $fk) {
+            $this->assertNotContains('documentable_id', $fk['columns']);
+        }
+
+        foreach (Schema::getForeignKeys('notes') as $fk) {
+            $this->assertNotContains('notable_id', $fk['columns']);
+        }
+    }
+
+    #[Test]
+    public function notes_carry_no_actor_triple(): void
+    {
+        // Notes are internal-only by construction: author_id is NOT NULL and
+        // is always a user, so an external grant cannot author one.
+        $this->assertTrue(Schema::hasColumn('notes', 'author_id'));
+        $this->assertFalse(Schema::hasColumn('notes', 'source'));
+        $this->assertFalse(Schema::hasColumn('notes', 'access_grant_id'));
+        $this->assertFalse(Schema::hasColumn('notes', 'created_by'));
+
+        // Documents DO carry it - they can arrive through a grant.
+        foreach (['source', 'created_by', 'access_grant_id'] as $column) {
+            $this->assertTrue(Schema::hasColumn('documents', $column));
+        }
     }
 
     #[Test]
