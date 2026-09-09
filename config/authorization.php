@@ -27,6 +27,31 @@ use App\Enums\UserRole;
 return [
 
     /*
+    |--------------------------------------------------------------------------
+    | The initial Super Admin
+    |--------------------------------------------------------------------------
+    |
+    | Read HERE rather than with env() inside the seeder, and that is not a
+    | style preference. `php artisan config:cache` stops Laravel loading the
+    | .env file at all, so an env() call outside a config file returns its
+    | DEFAULT from that moment on. A deployment that caches config before
+    | seeding - which is the usual order - would therefore have created the
+    | first Super Admin at the default address no matter what the environment
+    | said, silently, and a guessable administrator address in production is
+    | worth more than a style point.
+    |
+    | The password is deliberately absent from any default. Leave it unset and
+    | the seeder generates one and prints it once; there is no path by which a
+    | credential reaches version control.
+    |
+    */
+    'initial_super_admin' => [
+        'name' => env('BMP_SUPER_ADMIN_NAME', 'Super Admin'),
+        'email' => env('BMP_SUPER_ADMIN_EMAIL', 'admin@example.test'),
+        'password' => env('BMP_SUPER_ADMIN_PASSWORD', ''),
+    ],
+
+    /*
     | Every permission in the system, grouped for presentation. The groups are
     | display metadata only; authorization never reads them.
     */

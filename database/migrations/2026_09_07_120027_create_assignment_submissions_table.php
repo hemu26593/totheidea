@@ -51,7 +51,9 @@ return new class extends Migration
             $table->timestamps();
 
             // One submission record per participant per released assignment.
-            $table->unique(['assignment_instance_id', 'enrollment_id']);
+            // Named explicitly: the generated name is 66 characters and
+            // MySQL's identifier limit is 64.
+            $table->unique(['assignment_instance_id', 'enrollment_id'], 'assignment_submissions_instance_enrollment_unique');
             // The participant workspace, and trigger 4 (overdue).
             $table->index(['enrollment_id', 'status']);
             // The global scope.

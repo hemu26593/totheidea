@@ -33,7 +33,12 @@ return new class extends Migration
 
             // Protects "a form is attached to a session once". A duplicate
             // would double-count in completion and fire trigger 2 twice.
-            $table->unique(['session_template_id', 'form_template_id']);
+            // Named explicitly. The generated name would be
+            // session_template_forms_session_template_id_form_template_id_unique
+            // at 66 characters, and MySQL rejects any identifier over 64
+            // (ERROR 1059), so the migration would fail on the production
+            // database while succeeding on SQLite (ADR-006).
+            $table->unique(['session_template_id', 'form_template_id'], 'session_template_forms_unique');
             // Reverse lookup: "which sessions use this form".
             $table->index('form_template_id');
         });

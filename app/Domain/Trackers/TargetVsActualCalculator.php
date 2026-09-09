@@ -45,10 +45,14 @@ class TargetVsActualCalculator
             ->where('customer_id', $customer->getKey())
             ->whereDate('entry_date', '>=', $periodStart)
             ->whereDate('entry_date', '<=', $periodEnd)
-            ->selectRaw('SUM('.$this->column($metric).') as total, COUNT(*) as rows')
+            // NOT `as rows`. ROWS is a reserved word in MySQL 8.0 (the window
+            // frame clause), so an unquoted alias of that name is a syntax
+            // error there while being perfectly happy in SQLite. Production is
+            // MySQL (ADR-006), so the alias has to be a word both accept.
+            ->selectRaw('SUM('.$this->column($metric).') as total, COUNT(*) as entry_count')
             ->first();
 
-        if ($row === null || (int) $row->rows === 0) {
+        if ($row === null || (int) $row->entry_count === 0) {
             return null;
         }
 

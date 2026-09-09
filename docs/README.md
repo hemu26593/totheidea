@@ -213,6 +213,17 @@ Authorize on `mount()` **and** in every action. A public method on a Livewire
 component is an HTTP endpoint whatever the rendered page offers, so
 `@can` in a template hides a button and authorizes nothing.
 
+## Deploying to production
+
+Server requirements, environment variables, the deploy sequence, queue worker and
+scheduler configuration, storage layout, backups, rollback and a smoke test are
+in [`production-runbook.md`](production-runbook.md).
+
+Two things there are worth knowing before you read the rest of it: the
+development database is SQLite and production is MySQL (ADR-005, ADR-006), and
+`php artisan config:cache` stops Laravel reading `.env` — so it must run *after*
+the environment file is complete, never before.
+
 ## Repository conventions
 
 - `CLAUDE.md` (repository root) holds the permanent architecture, AI, data

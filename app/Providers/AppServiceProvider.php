@@ -13,6 +13,8 @@ use App\Exceptions\AiProviderNotConfiguredException;
 use App\Listeners\RecordAuthenticationAudit;
 use App\Models\User;
 use App\Policies\UserPolicy;
+use Illuminate\Http\Middleware\TrustProxies;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -31,6 +33,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(User::class, UserPolicy::class);
 
         Event::subscribe(RecordAuthenticationAudit::class);
+
+        $this->configureTrustedProxies();
 
         $this->registerSuperAdminGate();
         $this->configurePasswordRules();
@@ -100,6 +104,47 @@ class AppServiceProvider extends ServiceProvider
 
             return in_array($ability, $guarded, true) ? null : true;
         });
+    }
+
+    /**
+     * Whose forwarded headers to believe.
+     *
+     * Configured here rather than in bootstrap/app.php because the config
+     * repository is not bound when the middleware closure runs there, and
+     * reading env() at that point would return the default the moment
+     * `config:cache` had been used - which is exactly the production case this
+     * setting exists for.
+     *
+     * TWO THINGS IN THIS SYSTEM DEPEND ON THE CALLER'S REAL ADDRESS.
+     * AccessGrantRedeemer bounds token guessing per caller IP, so behind an
+     * unread proxy every external request would share one address and a single
+     * abuser could exhaust the budget for every participating business at once.
+     * And a grant records last_used_ip, which answers nothing if it holds the
+     * load balancer.
+     *
+     * Trusting nothing is the default and the safe direction: a forwarded
+     * header is trivially forged, so it may be honoured only where a proxy is
+     * known to sit in front and to overwrite it.
+     */
+    private function configureTrustedProxies(): void
+    {
+        $configured = trim((string) config('app.trusted_proxies', ''));
+
+        if ($configured === '') {
+            return;
+        }
+
+        TrustProxies::at($configured === '*'
+            ? '*'
+            : array_values(array_filter(array_map('trim', explode(',', $configured)))));
+
+        TrustProxies::withHeaders(
+            Request::HEADER_X_FORWARDED_FOR
+            | Request::HEADER_X_FORWARDED_HOST
+            | Request::HEADER_X_FORWARDED_PORT
+            | Request::HEADER_X_FORWARDED_PROTO
+            | Request::HEADER_X_FORWARDED_AWS_ELB,
+        );
     }
 
     private function configurePasswordRules(): void

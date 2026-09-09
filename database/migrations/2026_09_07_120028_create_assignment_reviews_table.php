@@ -42,7 +42,9 @@ return new class extends Migration
 
             // One decision per attempt. Two would make the current status
             // ambiguous.
-            $table->unique(['assignment_submission_id', 'attempt_number']);
+            // Named explicitly: the generated name is 65 characters and
+            // MySQL's identifier limit is 64.
+            $table->unique(['assignment_submission_id', 'attempt_number'], 'assignment_reviews_submission_attempt_unique');
         });
     }
 

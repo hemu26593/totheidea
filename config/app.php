@@ -97,6 +97,23 @@ return [
 
     'cipher' => 'AES-256-CBC',
 
+    /*
+    |--------------------------------------------------------------------------
+    | Trusted proxies
+    |--------------------------------------------------------------------------
+    |
+    | Read in bootstrap/app.php. Empty means trust nothing, which is correct
+    | anywhere the application is reachable directly: X-Forwarded-* headers are
+    | trivially forged, and honouring them from an untrusted source lets a
+    | caller choose the IP that rate limiting and the audit trail will record.
+    |
+    | Behind a load balancer or CDN, set TRUSTED_PROXIES to its address, a
+    | comma-separated list of addresses, or '*' when nothing can reach the
+    | application except through that proxy.
+    |
+    */
+    'trusted_proxies' => env('TRUSTED_PROXIES', ''),
+
     'key' => env('APP_KEY'),
 
     'previous_keys' => [

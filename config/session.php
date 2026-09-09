@@ -169,7 +169,11 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    // Secure by default in production, off elsewhere so local HTTP still
+    // works. Left unset, Laravel sends the session cookie over plain HTTP too,
+    // and a session cookie that can travel unencrypted is a session that can be
+    // taken. SESSION_SECURE_COOKIE still overrides this either way.
+    'secure' => env('SESSION_SECURE_COOKIE', env('APP_ENV') === 'production'),
 
     /*
     |--------------------------------------------------------------------------
