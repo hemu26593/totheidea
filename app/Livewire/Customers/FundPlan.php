@@ -13,7 +13,6 @@ use App\Livewire\Concerns\ReportsDomainFailures;
 use App\Models\Customer;
 use App\Models\Enrollment;
 use App\Models\FundPlan as FundPlanModel;
-use App\Models\FundPlanLine;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -87,9 +86,18 @@ class FundPlan extends Component
         );
     }
 
+    /**
+     * Adding a line is authorized against the PLAN, not the line.
+     *
+     * A line has no policy of its own, and it should not: it is part of its
+     * plan and carries no permission the plan does not. Asking the gate about
+     * a policy-less model denies everybody except a Super Admin (who is waved
+     * through by Gate::before), which made the whole fund plan unusable for
+     * the two roles that hold fund_plans.manage.
+     */
     public function startLine(string $section): void
     {
-        $this->authorize('create', FundPlanLine::class);
+        $this->authorizeLineEditing();
 
         $this->reset(['planningType', 'dueClassification', 'label', 'weekNumber', 'plannedAmount', 'actualAmount']);
         $this->section = $section;
@@ -98,7 +106,7 @@ class FundPlan extends Component
 
     public function addLine(FundPlanService $plans): void
     {
-        $this->authorize('create', FundPlanLine::class);
+        $this->authorizeLineEditing();
 
         $this->validate([
             'section' => ['required', 'string', 'in:'.implode(',', array_column(FundPlanSection::cases(), 'value'))],
@@ -169,6 +177,19 @@ class FundPlan extends Component
             'planningTypes' => PlanningType::cases(),
             'dueClassifications' => DueClassification::cases(),
         ])->layout('components.layouts.app', ['title' => $customer->name.' — Fund Plan']);
+    }
+
+    /**
+     * The plan's own `update` ability - fund_plans.manage - which Staff and
+     * Admin both hold. Approval remains a separate, guarded ability.
+     */
+    private function authorizeLineEditing(): void
+    {
+        $plan = $this->plan();
+
+        $plan === null
+            ? $this->authorize('create', FundPlanModel::class)
+            : $this->authorize('update', $plan);
     }
 
     private function plan(): ?FundPlanModel

@@ -68,8 +68,10 @@
                     <x-slot:title>{{ Str::headline($section->value) }}</x-slot:title>
 
                     <x-slot:actions>
+                        {{-- Authorized against the plan: a line carries no
+                             permission of its own. --}}
                         @if ($plan->status === App\Models\FundPlan::STATUS_DRAFT)
-                            @can('create', App\Models\FundPlanLine::class)
+                            @can('update', $plan)
                                 <x-ui.button size="sm" wire:click="startLine('{{ $section->value }}')">Add line</x-ui.button>
                             @endcan
                         @endif

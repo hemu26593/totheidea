@@ -73,11 +73,7 @@
                     </x-ui.td>
 
                     <x-ui.td align="right">
-                        @if ($item->isDone())
-                            @can('update', $item)
-                                <x-ui.button size="sm" wire:click="reopen({{ $item->id }})">Reopen</x-ui.button>
-                            @endcan
-                        @elseif ($item->isPlanned())
+                        @if ($item->isPlanned())
                             @can('complete', $item)
                                 <x-ui.button size="sm" variant="primary"
                                              wire:click="complete({{ $item->id }})">Complete</x-ui.button>

@@ -34,6 +34,14 @@ use Livewire\Component;
  * G / C / M are carried verbatim from the client's own worksheet. Their
  * meaning is an open decision, so the columns are labelled exactly "G", "C"
  * and "M" and no expansion is invented.
+ *
+ * THERE IS NO REOPEN CONTROL, and that is deliberate. DayPlanService offers
+ * complete() and no inverse: a completed or carried-forward item is the record
+ * of what happened on its own day, and assertIsStillPlanned() refuses to edit
+ * one. Offering a button for a transition the domain does not have produced a
+ * control that reported success and changed nothing. Whether a mis-completed
+ * task should be reopenable is an open question for the client, not one this
+ * screen answers.
  */
 class DayPlan extends Component
 {
@@ -121,24 +129,6 @@ class DayPlan extends Component
         $this->runGuarded(
             fn () => $dayPlans->complete($item, null, auth()->user()),
             'Task completed.',
-        );
-    }
-
-    /**
-     * Reopen a completed task.
-     *
-     * Goes through DayPlanService::update rather than touching the model, so
-     * the ownership and actor rules the service holds still apply.
-     */
-    public function reopen(int $itemId, DayPlanService $dayPlans): void
-    {
-        $item = $this->itemInWorkspace($itemId);
-
-        $this->authorize('update', $item);
-
-        $this->runGuarded(
-            fn () => $dayPlans->update($item, ['status' => DayPlanItem::STATUS_PLANNED], auth()->user()),
-            'Task reopened.',
         );
     }
 
