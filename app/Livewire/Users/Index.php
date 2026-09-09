@@ -8,6 +8,7 @@ use App\Enums\UserRole;
 use App\Exceptions\AuthorizationRuleException;
 use App\Models\User;
 use App\Services\UserService;
+use App\Support\LikeTerm;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -92,11 +93,14 @@ class Index extends Component
         return User::query()
             ->with('roles')
             ->when($this->search !== '', function (Builder $query): void {
-                $term = '%'.str_replace('%', '\%', $this->search).'%';
+                // See App\Support\LikeTerm. This one also escaped only `%`,
+                // so an underscore typed into the box was a wildcard on both
+                // engines.
+                $term = LikeTerm::contains($this->search);
 
                 $query->where(function (Builder $inner) use ($term): void {
-                    $inner->where('name', 'like', $term)
-                        ->orWhere('email', 'like', $term);
+                    LikeTerm::where($inner, 'name', $term);
+                    LikeTerm::orWhere($inner, 'email', $term);
                 });
             })
             ->when($this->status === 'active', fn (Builder $q) => $q->where('is_active', true))

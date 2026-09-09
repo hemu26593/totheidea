@@ -23,6 +23,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -136,15 +137,22 @@ class DataIntegrityUatTest extends TestCase
     {
         $tables = [];
 
-        foreach (DB::select("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'") as $row) {
-            $name = (string) $row->name;
+        // Laravel's own introspection, not sqlite_master: the same sweep has to
+        // run against MySQL (ADR-006), and a catalogue query written for one
+        // engine turns a portability guard into a SQLite-only one.
+        foreach (Schema::getTables() as $table) {
+            $name = (string) $table['name'];
+
+            if (str_contains($name, '.')) {
+                $name = substr($name, strrpos($name, '.') + 1);
+            }
 
             if (in_array($name, ['migrations', 'cache', 'cache_locks', 'jobs', 'job_batches', 'failed_jobs'], true)) {
                 continue;
             }
 
-            foreach (DB::select("PRAGMA table_info(\"{$name}\")") as $info) {
-                if ((string) $info->name === $column) {
+            foreach (Schema::getColumns($name) as $definition) {
+                if ((string) $definition['name'] === $column) {
                     $tables[] = $name;
                     break;
                 }
@@ -348,10 +356,9 @@ class DataIntegrityUatTest extends TestCase
         $this->workADayForBothCustomers();
 
         foreach ($this->tablesWithColumn('customer_id') as $table) {
-            $nullable = collect(DB::select("PRAGMA table_info(\"{$table}\")"))
-                ->firstWhere('name', 'customer_id');
+            $definition = collect(Schema::getColumns($table))->firstWhere('name', 'customer_id');
 
-            if ((int) $nullable->notnull === 1) {
+            if ($definition !== null && $definition['nullable'] === false) {
                 continue; // The schema itself forbids it.
             }
 

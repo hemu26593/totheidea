@@ -83,18 +83,34 @@ class AiProvenanceTest extends TestCase
 
         foreach (['input_context', 'customer_id', 'ai_prompt_version_id', 'generated_by', 'purpose'] as $column) {
             $fresh = $generation->fresh();
+            $original = $fresh->getAttribute($column);
 
+            // Derived from the CURRENT value so it is always different. A fixed
+            // literal silently matched the existing id for the foreign keys,
+            // leaving nothing dirty - so the save was a no-op that no guard had
+            // any reason to refuse, and two of these columns were never
+            // actually tested.
             $replacement = match ($column) {
                 'input_context' => ['tampered' => true],
-                'purpose' => AiPurpose::Summary,
-                default => 1,
+                'purpose' => $fresh->purpose === AiPurpose::Summary ? AiPurpose::FormDraft : AiPurpose::Summary,
+                default => ((int) $original) + 1,
             };
+
+            $this->assertNotEquals($original, $replacement, "The probe for [{$column}] must actually change it.");
 
             try {
                 $fresh->forceFill([$column => $replacement])->save();
                 $this->fail("[{$column}] must be fixed once the generation exists.");
-            } catch (RuntimeException $e) {
-                $this->assertStringContainsString('fixed', $e->getMessage());
+            } catch (RuntimeException) {
+                // Two guards can refuse this - the model's own, and
+                // BelongsToCustomer for customer_id - and which one speaks
+                // first is not the rule under test. The rule is that the write
+                // is refused and the record is unchanged.
+                $this->assertEquals(
+                    $original,
+                    $generation->fresh()->getAttribute($column),
+                    "[{$column}] was refused but changed anyway.",
+                );
             }
         }
     }

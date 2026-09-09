@@ -7,6 +7,7 @@ namespace App\Livewire\Batches;
 use App\Livewire\Concerns\ReportsDomainFailures;
 use App\Models\Batch;
 use App\Models\Program;
+use App\Support\LikeTerm;
 use Illuminate\Contracts\View\View;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Livewire\Attributes\Url;
@@ -114,9 +115,14 @@ class Index extends Component
                 'enrollments as active_enrollments_count' => fn ($q) => $q->where('status', 'enrolled'),
             ])
             ->when($this->search !== '', function ($query): void {
-                $term = '%'.str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $this->search).'%';
+                // See App\Support\LikeTerm: the escape character is stated
+                // rather than assumed, because SQLite has no default one.
+                $term = LikeTerm::contains($this->search);
 
-                $query->where(fn ($inner) => $inner->where('name', 'like', $term)->orWhere('code', 'like', $term));
+                $query->where(function ($inner) use ($term): void {
+                    LikeTerm::where($inner, 'name', $term);
+                    LikeTerm::orWhere($inner, 'code', $term);
+                });
             })
             ->when($this->programId, fn ($q) => $q->where('program_id', $this->programId))
             ->orderByDesc('starts_on')

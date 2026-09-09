@@ -30,7 +30,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class FormSubmission extends Model
 {
     use BelongsToCustomer;
-
     use HasActorTriple;
 
     /** @use HasFactory<FormSubmissionFactory> */

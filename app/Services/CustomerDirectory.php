@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Customer;
+use App\Support\LikeTerm;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
@@ -27,13 +28,15 @@ class CustomerDirectory
     {
         return Customer::query()
             ->when($search !== '', function (Builder $query) use ($search): void {
-                // Escaped: a literal % typed into the search box must match a
-                // literal %, not everything.
-                $term = '%'.str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $search).'%';
+                // Escaped through LikeTerm, which states the escape character
+                // rather than relying on an engine default: SQLite has none and
+                // MySQL uses a backslash, so a literal % typed into the search
+                // box matched everything on one and nothing on the other.
+                $term = LikeTerm::contains($search);
 
                 $query->where(function (Builder $inner) use ($term): void {
-                    $inner->where('name', 'like', $term)
-                        ->orWhere('code', 'like', $term);
+                    LikeTerm::where($inner, 'name', $term);
+                    LikeTerm::orWhere($inner, 'code', $term);
                 });
             })
             ->when(

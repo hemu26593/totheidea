@@ -55,6 +55,29 @@ return [
             'unix_socket' => env('DB_SOCKET', ''),
             'charset' => env('DB_CHARSET', 'utf8mb4'),
             'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
+
+            /*
+            | PIN THE CONNECTION TO UTC, and do not leave it to the server.
+            |
+            | MySQL converts a TIMESTAMP column between the session time zone
+            | and UTC on every read and write; DATETIME and SQLite do no such
+            | thing. Laravel's timestamps() gives us TIMESTAMP columns, and this
+            | schema has 140 of them, so with the session left at SYSTEM the
+            | stored instant depends on the machine's zone at the moment of the
+            | write. It round-trips while that zone never changes - and shifts
+            | every one of those columns when it does: a DST transition, a move
+            | between hosts, or a mysqldump taken under one zone and restored
+            | under another.
+            |
+            | '+00:00' matches config('app.timezone') = UTC, so MySQL stores the
+            | instant the application meant and hands back the same one. It also
+            | makes MySQL agree with SQLite, which is what lets development and
+            | production behave alike (ADR-005, ADR-006).
+            |
+            | Set this BEFORE the first production write. Changing it afterwards
+            | reinterprets data that is already stored.
+            */
+            'timezone' => env('DB_TIMEZONE', '+00:00'),
             'prefix' => '',
             'prefix_indexes' => true,
             'strict' => true,

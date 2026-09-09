@@ -224,6 +224,10 @@ development database is SQLite and production is MySQL (ADR-005, ADR-006), and
 `php artisan config:cache` stops Laravel reading `.env` — so it must run *after*
 the environment file is complete, never before.
 
+What differs between the two database engines, what was changed to make them
+agree, and how to run the suite against a real MySQL server is in
+[`mysql-compatibility.md`](mysql-compatibility.md).
+
 ## Repository conventions
 
 - `CLAUDE.md` (repository root) holds the permanent architecture, AI, data
