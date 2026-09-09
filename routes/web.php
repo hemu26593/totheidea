@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\External\ExternalFormController;
 use App\Livewire;
 use Illuminate\Support\Facades\Route;
 
@@ -200,3 +201,39 @@ Route::middleware(['auth', 'active'])->group(function (): void {
             ->middleware('can:users.edit')->name('edit');
     });
 });
+
+/*
+|--------------------------------------------------------------------------
+| External participant access — the only unauthenticated surface
+|--------------------------------------------------------------------------
+|
+| A participating business has no account. It has a link, and the token in that
+| link is a scoped, expiring capability for one form version on one enrolment.
+| These two routes are the whole of that surface.
+|
+| THEY ARE OUTSIDE THE auth GROUP ON PURPOSE, and that is the only thing they
+| are outside. There is no second guard, no customer session and no cookie here
+| that means anything: the token is presented again on every request and
+| AccessGrantRedeemer re-proves expiry, revocation, remaining uses, ability and
+| scope from the database each time.
+|
+| No id is accepted from the request. Which customer, which enrolment, which
+| form version and which submission are all resolved from the grant, so there is
+| nothing in a URL or a payload for a participant to substitute.
+|
+| Throttling here is about VOLUME, which is a request-rate concern and belongs
+| at the route. Token GUESSING is bounded separately inside the redeemer, which
+| counts refusals per caller. The two limits do different jobs and neither
+| replaces the other.
+|
+*/
+Route::prefix('external/forms')
+    ->name('external.forms.')
+    ->middleware('throttle:60,1')
+    ->group(function (): void {
+        Route::get('/{token}', [ExternalFormController::class, 'show'])->name('show');
+
+        // CSRF applies: the route is in the web group, so the POST carries a
+        // session token as well as the capability token.
+        Route::post('/{token}', [ExternalFormController::class, 'store'])->name('store');
+    });

@@ -228,18 +228,29 @@ class AccessGrantRedeemer
     /**
      * Keyed by caller, not by token. Keying by token would let an attacker try
      * every candidate once and never hit a limit.
+     *
+     * THE BUDGET IS SPENT BY REFUSALS, NOT BY USE. The limiter exists to bound
+     * token GUESSING, and a token that resolves is not a guess. Counting
+     * successful calls too would make the limit fire on legitimate work: an
+     * external participant re-presents their token on every saved answer,
+     * because there is no session for the boundary to trust between calls, so
+     * an eleven-question form would lock its own owner out of their link.
+     * RateLimiter::hit() therefore lives in deny(). Volume, as opposed to
+     * guessing, is bounded at the route by throttle middleware, which is where
+     * a request-rate concern belongs.
      */
     private function assertNotRateLimited(?string $ip): void
     {
         $max = (int) config('access.redemption.max_attempts', 10);
-        $decay = (int) config('access.redemption.decay_seconds', 60);
-        $key = 'access-grant-redemption:'.($ip ?? 'unknown');
 
-        if (RateLimiter::tooManyAttempts($key, $max)) {
+        if (RateLimiter::tooManyAttempts($this->limiterKey($ip), $max)) {
             $this->deny(null, AccessGrantDeniedException::REASON_RATE_LIMITED, $ip);
         }
+    }
 
-        RateLimiter::hit($key, $decay);
+    private function limiterKey(?string $ip): string
+    {
+        return 'access-grant-redemption:'.($ip ?? 'unknown');
     }
 
     /**
@@ -251,6 +262,11 @@ class AccessGrantRedeemer
      */
     private function deny(?AccessGrant $grant, string $reason, ?string $ip): never
     {
+        RateLimiter::hit(
+            $this->limiterKey($ip),
+            (int) config('access.redemption.decay_seconds', 60),
+        );
+
         try {
             $this->audit->log(
                 AuditAction::AccessGrantDenied,

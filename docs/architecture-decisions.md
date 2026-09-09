@@ -574,6 +574,67 @@ provenance onto existing rows later is far harder than including it.
 
 ---
 
+## ADR-015: External participants act through a capability, never an account
+
+**Status:** Accepted
+**Date:** 2026-09-09
+
+### Decision
+
+A participating business reaches the platform through exactly two
+unauthenticated routes:
+
+```
+GET  /external/forms/{token}
+POST /external/forms/{token}
+```
+
+The token in the path is the whole of the authority. It is presented again on
+every request and re-validated from the database by `AccessGrantRedeemer`;
+nothing about the caller survives between requests. `GET` calls `authorize()`
+and consumes nothing, so a link may be opened, half-filled and reopened. `POST`
+saves progress the same way, and only submitting reaches `redeem()` and spends
+one of the grant's uses.
+
+No customer, enrolment, form, version or submission identifier is accepted from
+the request. Every one of them is resolved from the grant, so there is nothing
+in a URL or a payload for a participant to substitute.
+
+This does not weaken ADR-003, ADR-004 or ADR-007, and it must not be read as
+softening them. There is still no Customer login, no customer password, no
+customer guard, no customer session and no customer dashboard. A `Customer` is
+still not `Authenticatable`. What exists is a scoped, expiring capability for
+one action on one resource — closer to a signed URL than to an account.
+
+### Context
+
+The AccessGrant domain was built in Phase 5 and was complete: hashed tokens,
+scope asserted at issue and again at redemption, atomic use counting, uniform
+refusals. What it never had was an HTTP surface, so a business could not
+actually fill in its own form; staff had to capture answers on their behalf.
+Phase 11 UAT raised that as the one CRITICAL gap in the workflow.
+
+The alternative — a customer portal with accounts — was rejected for the same
+reasons ADR-003 records. An account is a standing identity that must be
+provisioned, recovered, revoked and audited, and it grants access to whatever
+that identity can reach. A capability grants one action on one resource and
+then expires whether anyone remembers it or not.
+
+### Consequences
+
+- The default-deny route audit in `RouteAuthorizationTest` now carries one
+  documented exclusion. Any *other* route that leaves the authenticated area
+  still fails that test.
+- Two rate limits apply, doing different jobs. Route-level `throttle` bounds
+  request volume. The redeemer's own limiter bounds token *guessing*, and it
+  counts refusals rather than uses — a participant re-presents their token on
+  every saved answer, so counting successes would lock a business out of its
+  own link partway through a long form.
+- The external view is a plain HTML form rather than a Livewire component, so
+  it works with no JavaScript on an unknown device. It shares the question-type
+  mapping with the internal renderer through `AnswerValueMapper`; neither view
+  writes an answer itself.
+
 ## Final permission matrix (V1)
 
 42 permissions across 7 groups. Legend: **✔** granted · **·** not granted ·

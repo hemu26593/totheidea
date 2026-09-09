@@ -4,16 +4,14 @@ declare(strict_types=1);
 
 namespace App\Livewire\Forms;
 
+use App\Domain\Forms\AnswerValueMapper;
 use App\Domain\Forms\SubmissionService;
 use App\Domain\Scoring\ScoringService;
 use App\Enums\QuestionType;
 use App\Livewire\Concerns\ReportsDomainFailures;
-use App\Models\Answer;
 use App\Models\FormSubmission;
 use App\Models\Question;
-use App\Models\QuestionOption;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Collection;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 
@@ -82,11 +80,13 @@ class FormRenderer extends Component
         $question = $this->questionInVersion($submission, $questionId);
 
         $this->runGuarded(function () use ($submissions, $submission, $question): void {
+            $mapper = app(AnswerValueMapper::class);
+
             $submissions->answer(
                 $submission,
                 $question,
-                $this->scalarValueFor($question),
-                $this->selectedOptionsFor($question),
+                $mapper->scalarValue($question, $this->answers[$question->getKey()] ?? null),
+                $mapper->selectedOptions($question, (array) ($this->selections[$question->getKey()] ?? [])),
             );
         }, 'Answer saved.');
     }
@@ -97,7 +97,7 @@ class FormRenderer extends Component
 
         $this->authorize('update', $submission);
 
-        $missing = $this->unansweredRequiredQuestions($submission);
+        $missing = app(AnswerValueMapper::class)->unansweredRequiredQuestions($submission);
 
         if ($missing->isNotEmpty()) {
             $this->addError('domain', sprintf(
@@ -185,118 +185,6 @@ class FormRenderer extends Component
      */
     private function loadExistingAnswers(FormSubmission $submission): void
     {
-        foreach ($submission->answers()->with(['answerOptions', 'question'])->get() as $answer) {
-            $this->answers[$answer->question_id] = $this->displayValueFor($answer);
-
-            $this->selections[$answer->question_id] = $answer->answerOptions
-                ->pluck('question_option_id')
-                ->map(fn ($id): int => (int) $id)
-                ->all();
-        }
-    }
-
-    /**
-     * Read a stored answer back into the shape its control expects.
-     *
-     * Read by the question's TYPE, not by "whichever column is not null".
-     * A `false` boolean and a `0` number are both real answers, and a form
-     * that renders a recorded No as an empty dash is showing a consultant
-     * something the participant did not say - which is worse than showing
-     * nothing, because it looks like an answer.
-     *
-     * The values are strings because that is what an HTML control round-trips:
-     * a PHP `true` never matches an <option value="1">.
-     */
-    private function displayValueFor(Answer $answer): string|int|float|null
-    {
-        return match ($answer->question?->type) {
-            QuestionType::Boolean => $answer->value_boolean === null
-                ? null
-                : ($answer->value_boolean ? '1' : '0'),
-
-            // decimal:4 casts to "18.0000"; the trailing scale is storage
-            // detail and does not belong in the box the user reads.
-            QuestionType::Number, QuestionType::Scale => $answer->value_number === null
-                ? null
-                : 0 + $answer->value_number,
-
-            QuestionType::Date => $answer->value_date?->toDateString(),
-
-            // A choice question keeps its answer in $selections.
-            QuestionType::SelectOne, QuestionType::SelectMany => null,
-
-            default => $answer->value_text,
-        };
-    }
-
-    /**
-     * Map the form input onto the column the question's type actually uses.
-     *
-     * @return array<string, mixed>
-     */
-    private function scalarValueFor(Question $question): array
-    {
-        $raw = $this->answers[$question->getKey()] ?? null;
-
-        if ($raw === null || $raw === '') {
-            return ['value_text' => null, 'value_number' => null, 'value_date' => null, 'value_boolean' => null];
-        }
-
-        return match ($question->type) {
-            QuestionType::Number, QuestionType::Scale => ['value_number' => (float) $raw],
-            QuestionType::Date => ['value_date' => (string) $raw],
-            QuestionType::Boolean => ['value_boolean' => (bool) $raw],
-            QuestionType::SelectOne, QuestionType::SelectMany => [],
-            default => ['value_text' => (string) $raw],
-        };
-    }
-
-    /**
-     * @return array<int, QuestionOption>
-     */
-    private function selectedOptionsFor(Question $question): array
-    {
-        $ids = array_filter((array) ($this->selections[$question->getKey()] ?? []));
-
-        if ($ids === []) {
-            return [];
-        }
-
-        // Constrained to this question's own options. The service asserts it
-        // too; doing it in the query means a foreign id simply finds nothing.
-        return QuestionOption::query()
-            ->where('question_id', $question->getKey())
-            ->whereIn('id', $ids)
-            ->get()
-            ->all();
-    }
-
-    /**
-     * @return Collection<int, Question>
-     */
-    private function unansweredRequiredQuestions(FormSubmission $submission): Collection
-    {
-        $answered = $submission->answers()->get()->keyBy('question_id');
-
-        return $submission->formVersion
-            ->questions()
-            ->where('is_required', true)
-            ->get()
-            ->filter(function (Question $question) use ($answered): bool {
-                $answer = $answered[$question->getKey()] ?? null;
-
-                if ($answer === null) {
-                    return true;
-                }
-
-                if (in_array($question->type, [QuestionType::SelectOne, QuestionType::SelectMany], true)) {
-                    return $answer->answerOptions()->count() === 0;
-                }
-
-                return $answer->value_text === null
-                    && $answer->value_number === null
-                    && $answer->value_date === null
-                    && $answer->value_boolean === null;
-            });
+        [$this->answers, $this->selections] = app(AnswerValueMapper::class)->existingAnswers($submission);
     }
 }

@@ -92,8 +92,16 @@ For every major feature:
 
 The repository contains the Laravel technical foundation, **authentication and
 role-based authorization** (ADR-007 … ADR-014), the **complete BMP domain layer**
-(all 42 tables, their models, services and policies), and the **internal staff
-application UI** built on top of it.
+(all 42 tables, their models, services and policies), the **internal staff
+application UI** built on top of it, and the **external participant form
+surface** (ADR-015).
+
+External participation is two unauthenticated routes, `GET` and `POST`
+`/external/forms/{token}`, and nothing else. The token is the whole authority:
+it is re-validated from the database on every request, no customer, enrolment,
+form or submission id is accepted from the request, and `GET` consumes nothing
+while only submitting spends a use. This is a capability, not an account —
+there is still no customer login, password, guard, session or dashboard.
 
 Livewire components are the whole UI layer. They call domain services and never
 reimplement a rule: a screen that computes a figure the domain does not compute

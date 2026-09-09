@@ -30,24 +30,19 @@ use Tests\TestCase;
  * UAT section 6: how a participating business interacts with the platform
  * without an account.
  *
- * FINDING (UAT-C1, reported - deliberately not "fixed" here).
+ * FINDING UAT-C1, RAISED IN PHASE 11 AND CLOSED IN PHASE 11B.
  *
- * The AccessGrant domain is complete and correct: tokens are issued hashed,
- * scoped to one customer, one enrolment and one subject, expire, count their
- * uses atomically, and refuse a replay. What does not exist is any HTTP
- * surface that a participant could reach. No route redeems a token, and no
- * Livewire component or view references AccessGrantService,
- * AccessGrantRedeemer or ExternalFormSubmissionService. Every application
- * route sits behind `auth`.
+ * The AccessGrant domain was complete and correct - tokens issued hashed,
+ * scoped to one customer, one enrolment and one subject, expiring, counting
+ * their uses atomically, refusing a replay - but nothing exposed it over HTTP,
+ * so a business could not fill in its own form. That surface now exists:
+ * GET and POST /external/forms/{token}, outside the auth group and scoped by
+ * nothing but the grant. It is exercised over HTTP in
+ * tests/Feature/External/ExternalFormAccessTest.php.
  *
- * The consequence for UAT is concrete: a business cannot fill in its own
- * intake form. Staff can capture answers on their behalf, and everything
- * downstream of that works, but the participant-facing half of the workflow
- * cannot be exercised because it has not been built. Building it is a module,
- * not a defect fix, so UAT records it rather than inventing it.
- *
- * The tests below therefore verify two things that must hold whatever is built
- * next: the domain that a future external surface will sit on works, and a
+ * What this file still guards is the shape of the boundary rather than the
+ * feature: that the external surface is the ONLY thing outside the
+ * authenticated area, that the domain underneath it behaves, and that a
  * Customer never becomes an authenticatable User.
  */
 class ExternalAccessUatTest extends TestCase
@@ -55,7 +50,7 @@ class ExternalAccessUatTest extends TestCase
     use RefreshDatabase;
 
     #[Test]
-    public function no_route_in_the_application_lets_an_unauthenticated_visitor_reach_customer_data(): void
+    public function the_scoped_form_surface_is_the_only_unauthenticated_way_in(): void
     {
         $unprotected = [];
 
@@ -90,11 +85,12 @@ class ExternalAccessUatTest extends TestCase
             $unprotected[] = $route->methods()[0].' '.$uri;
         }
 
+        // The external participant surface, and nothing else. A route that
+        // appears here without redeeming an AccessGrant is a way into customer
+        // data with no capability behind it.
         $this->assertSame(
-            [],
+            ['GET external/forms/{token}', 'POST external/forms/{token}'],
             $unprotected,
-            'A route outside the authenticated area appeared. If it is the external participant surface, '
-            .'it must redeem an AccessGrant rather than simply being public.',
         );
     }
 

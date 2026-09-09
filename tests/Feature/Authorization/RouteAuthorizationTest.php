@@ -104,6 +104,15 @@ class RouteAuthorizationTest extends TestCase
             '#^user/password$#',
             '#^livewire[\w-]*/#',          // Livewire transport endpoints
             '#^storage/#',                 // filesystem disk routes
+
+            // The external participant surface. Unauthenticated by design and
+            // by necessity - a participating business has no account - but not
+            // unprotected: every request presents a scoped AccessGrant token
+            // that AccessGrantRedeemer re-validates from the database, and no
+            // customer, enrolment, form or submission id is accepted from the
+            // request. Its authorization is asserted over HTTP in
+            // tests/Feature/External/ExternalFormAccessTest.php.
+            '#^external/forms/#',
         ];
 
         $unprotected = collect(Route::getRoutes()->getRoutes())
