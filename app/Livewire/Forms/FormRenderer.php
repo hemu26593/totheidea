@@ -8,6 +8,7 @@ use App\Domain\Forms\SubmissionService;
 use App\Domain\Scoring\ScoringService;
 use App\Enums\QuestionType;
 use App\Livewire\Concerns\ReportsDomainFailures;
+use App\Models\Answer;
 use App\Models\FormSubmission;
 use App\Models\Question;
 use App\Models\QuestionOption;
@@ -184,17 +185,48 @@ class FormRenderer extends Component
      */
     private function loadExistingAnswers(FormSubmission $submission): void
     {
-        foreach ($submission->answers()->with('answerOptions')->get() as $answer) {
-            $this->answers[$answer->question_id] = $answer->value_text
-                ?? $answer->value_number
-                ?? $answer->value_date?->toDateString()
-                ?? $answer->value_boolean;
+        foreach ($submission->answers()->with(['answerOptions', 'question'])->get() as $answer) {
+            $this->answers[$answer->question_id] = $this->displayValueFor($answer);
 
             $this->selections[$answer->question_id] = $answer->answerOptions
                 ->pluck('question_option_id')
                 ->map(fn ($id): int => (int) $id)
                 ->all();
         }
+    }
+
+    /**
+     * Read a stored answer back into the shape its control expects.
+     *
+     * Read by the question's TYPE, not by "whichever column is not null".
+     * A `false` boolean and a `0` number are both real answers, and a form
+     * that renders a recorded No as an empty dash is showing a consultant
+     * something the participant did not say - which is worse than showing
+     * nothing, because it looks like an answer.
+     *
+     * The values are strings because that is what an HTML control round-trips:
+     * a PHP `true` never matches an <option value="1">.
+     */
+    private function displayValueFor(Answer $answer): string|int|float|null
+    {
+        return match ($answer->question?->type) {
+            QuestionType::Boolean => $answer->value_boolean === null
+                ? null
+                : ($answer->value_boolean ? '1' : '0'),
+
+            // decimal:4 casts to "18.0000"; the trailing scale is storage
+            // detail and does not belong in the box the user reads.
+            QuestionType::Number, QuestionType::Scale => $answer->value_number === null
+                ? null
+                : 0 + $answer->value_number,
+
+            QuestionType::Date => $answer->value_date?->toDateString(),
+
+            // A choice question keeps its answer in $selections.
+            QuestionType::SelectOne, QuestionType::SelectMany => null,
+
+            default => $answer->value_text,
+        };
     }
 
     /**

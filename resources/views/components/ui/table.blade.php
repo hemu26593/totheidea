@@ -2,7 +2,9 @@
     'headings' => [],
 ])
 
-<div {{ $attributes->merge(['class' => 'overflow-x-auto rounded-lg bg-white shadow-sm ring-1 ring-slate-200']) }}>
+{{-- min-w-0: see the note on ui.card. The scroll container must be allowed
+     to be narrower than the table it holds. --}}
+<div {{ $attributes->merge(['class' => 'min-w-0 overflow-x-auto rounded-lg bg-white shadow-sm ring-1 ring-slate-200']) }}>
     <table class="min-w-full divide-y divide-slate-200 text-sm">
         @if ($headings !== [])
             <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">

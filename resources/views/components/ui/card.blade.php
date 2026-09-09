@@ -4,7 +4,14 @@
     'padding' => true,
 ])
 
-<section {{ $attributes->merge(['class' => 'rounded-lg bg-white shadow-sm ring-1 ring-slate-200']) }}>
+{{--
+    min-w-0 is load-bearing, not cosmetic. A card is nearly always a grid or
+    flex child, and such a child defaults to min-width:auto - so a wide table
+    or <pre> inside it cannot shrink, and widens the whole document instead of
+    scrolling within its own overflow container. Without this the page scrolls
+    sideways on mobile and content is clipped off the right edge.
+--}}
+<section {{ $attributes->merge(['class' => 'min-w-0 rounded-lg bg-white shadow-sm ring-1 ring-slate-200']) }}>
     @if ($title || isset($actions))
         <header class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3">
             <div class="min-w-0">

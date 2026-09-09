@@ -82,8 +82,23 @@ class Customer extends Model
         return $this->belongsTo(User::class, 'archived_by');
     }
 
+    /**
+     * The one contact reminders go to.
+     *
+     * Uses the ALREADY-LOADED contacts when the caller eager-loaded them, and
+     * queries only when it must. Without that, a directory listing twenty
+     * customers issued twenty extra queries - one per row - for a column that
+     * was already in memory. The result is identical either way; only the
+     * number of round trips changes.
+     */
     public function primaryContact(): ?CustomerContact
     {
+        if ($this->relationLoaded('contacts')) {
+            return $this->contacts
+                ->first(fn (CustomerContact $contact): bool => (bool) $contact->is_primary
+                    && $contact->archived_at === null);
+        }
+
         return $this->contacts()
             ->where('is_primary', true)
             ->whereNull('archived_at')

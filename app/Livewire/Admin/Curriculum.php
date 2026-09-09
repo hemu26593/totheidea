@@ -122,7 +122,7 @@ class Curriculum extends Component
         ]);
 
         $session = $this->sessionInProgram((int) $this->attachingToSessionId);
-        $form = FormTemplate::query()->findOrFail($this->formTemplateId);
+        $form = $this->sharedFormTemplate((int) $this->formTemplateId);
 
         $saved = $this->runGuarded(
             fn () => $curriculum->attachForm($session, $form, $this->formRequired, 0, auth()->user()),
@@ -206,6 +206,26 @@ class Curriculum extends Component
         }
 
         return self::MAX_SEQUENCE;
+    }
+
+    /**
+     * Only SHARED curriculum may be attached to a programme.
+     *
+     * A form template carrying a customer_id is that business's own
+     * instrument. Attaching one here would put it into the curriculum every
+     * batch runs, so one customer's bespoke questions would be asked of
+     * everybody. The picker offers shared templates only; this refuses the
+     * request that did not come from the picker.
+     */
+    private function sharedFormTemplate(int $formTemplateId): FormTemplate
+    {
+        $form = FormTemplate::query()->findOrFail($formTemplateId);
+
+        if ($form->customer_id !== null) {
+            abort(404);
+        }
+
+        return $form;
     }
 
     /**

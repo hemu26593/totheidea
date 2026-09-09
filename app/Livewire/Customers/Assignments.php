@@ -58,7 +58,7 @@ class Assignments extends Component
         $this->validate(['body' => ['required', 'string', 'max:20000']]);
 
         $enrollment = $this->enrollmentInWorkspace((int) $this->submittingEnrollmentId);
-        $instance = AssignmentInstance::query()->findOrFail($this->submittingInstanceId);
+        $instance = $this->instanceReachableBy($enrollment, (int) $this->submittingInstanceId);
 
         $saved = $this->runGuarded(function () use ($submissions, $instance, $enrollment): void {
             // The service asserts that the instance and the enrolment resolve
@@ -96,6 +96,26 @@ class Assignments extends Component
             'submissions' => $submissions,
             'enrollments' => $enrollments->keyBy('batch_id'),
         ])->layout('components.layouts.app', ['title' => $customer->name.' — Assignments']);
+    }
+
+    /**
+     * An assignment is set to a BATCH, so "this workspace's assignments" means
+     * the released instances of the batch its enrolment is in.
+     *
+     * AssignmentSubmissionService asserts the same relationship (invariant I4)
+     * and would refuse a mismatch anyway. Checking here makes the boundary
+     * explicit at the edge, and turns a tampered id into a 404 rather than a
+     * refusal from three layers down.
+     */
+    private function instanceReachableBy(Enrollment $enrollment, int $instanceId): AssignmentInstance
+    {
+        $instance = AssignmentInstance::query()->with('sessionInstance')->findOrFail($instanceId);
+
+        if ((int) ($instance->sessionInstance?->batch_id) !== (int) $enrollment->batch_id) {
+            abort(404);
+        }
+
+        return $instance;
     }
 
     private function enrollmentInWorkspace(int $enrollmentId): Enrollment

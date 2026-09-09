@@ -13,6 +13,7 @@ use App\Models\FormTemplate;
 use App\Models\FormVersion;
 use App\Models\Question;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 
@@ -200,11 +201,11 @@ class FormTemplates extends Component
 
     public function render(): View
     {
-        $template = $this->templateId ? FormTemplate::query()->find($this->templateId) : null;
+        $template = $this->templateId ? $this->sharedTemplates()->find($this->templateId) : null;
         $version = $this->versionId ? FormVersion::query()->find($this->versionId) : null;
 
         return view('livewire.admin.form-templates', [
-            'templates' => FormTemplate::query()->withCount('versions')->orderBy('name')->get(),
+            'templates' => $this->sharedTemplates()->withCount('versions')->orderBy('name')->get(),
             'template' => $template,
             'versions' => $template?->versions()->orderByDesc('version_number')->get() ?? collect(),
             'version' => $version,
@@ -213,9 +214,21 @@ class FormTemplates extends Component
         ])->layout('components.layouts.app', ['title' => 'Form templates']);
     }
 
+    /**
+     * This screen authors SHARED curriculum, and creates templates with a null
+     * customer_id. A customer's own instrument is edited from that customer's
+     * workspace, so it is not reachable here even by a supplied id.
+     *
+     * @return Builder<FormTemplate>
+     */
+    private function sharedTemplates()
+    {
+        return FormTemplate::query()->whereNull('customer_id');
+    }
+
     private function template(): FormTemplate
     {
-        return FormTemplate::query()->findOrFail($this->templateId);
+        return $this->sharedTemplates()->findOrFail($this->templateId);
     }
 
     private function version(): FormVersion

@@ -9,7 +9,10 @@
     A hidden tab is a convenience, never a control: each destination
     authorizes itself on mount.
 --}}
-<nav {{ $attributes->merge(['class' => '-mb-px flex flex-wrap gap-x-1 overflow-x-auto border-b border-slate-200']) }}
+{{-- flex-nowrap, not flex-wrap: sixteen tabs wrapped onto five rows on a
+     narrow screen and pushed the content off the first viewport. A tab strip
+     scrolls sideways within itself. --}}
+<nav {{ $attributes->merge(['class' => '-mb-px flex flex-nowrap gap-x-1 overflow-x-auto border-b border-slate-200']) }}
      aria-label="Sections">
     @foreach ($tabs as $key => $tab)
         @php $active = $key === $current; @endphp
