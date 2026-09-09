@@ -192,12 +192,25 @@ class AiSecurityBoundaryTest extends TestCase
         $routes = collect(app('router')->getRoutes()->getRoutes())
             ->map(fn ($route): string => (string) $route->uri());
 
-        foreach (['chat', 'assistant', 'prompt', 'ask'] as $shape) {
+        // A conversational surface would be shaped like one of these.
+        foreach (['chat', 'assistant', 'ask', 'completion'] as $shape) {
             $this->assertFalse(
                 $routes->contains(fn (string $uri): bool => str_contains($uri, $shape)),
                 "A route matching [{$shape}] would be a general-purpose assistant surface."
             );
         }
+
+        // The AI surface is exactly three screens: a queue, one generation,
+        // and the prompt-version library. None of them takes free-form input
+        // that reaches a provider unmediated - a generation always names a
+        // published prompt version and a closed purpose.
+        $aiRoutes = $routes->filter(fn (string $uri): bool => str_starts_with($uri, 'ai/'))
+            ->sort()->values()->all();
+
+        $this->assertSame(
+            ['ai/generations', 'ai/generations/{generation}', 'ai/prompts'],
+            $aiRoutes,
+        );
     }
 
     #[Test]

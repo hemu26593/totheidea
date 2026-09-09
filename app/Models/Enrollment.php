@@ -62,4 +62,61 @@ class Enrollment extends Model
     {
         return $this->hasMany(TermsAcceptance::class);
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Read relationships
+    |--------------------------------------------------------------------------
+    |
+    | Retrieval only, added so the internal UI can read an enrolment's work
+    | without hand-rolling a query per screen. Writes still go through the
+    | domain services that own each rule - nothing here is a write path, and
+    | none of these relations is used to create a related record.
+    |
+    */
+
+    public function formSubmissions(): HasMany
+    {
+        return $this->hasMany(FormSubmission::class);
+    }
+
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(SessionAttendance::class);
+    }
+
+    public function assignmentSubmissions(): HasMany
+    {
+        return $this->hasMany(AssignmentSubmission::class);
+    }
+
+    public function dayPlanItems(): HasMany
+    {
+        return $this->hasMany(DayPlanItem::class);
+    }
+
+    public function timeGridEntries(): HasMany
+    {
+        return $this->hasMany(TimeGridEntry::class);
+    }
+
+    public function mmdTargets(): HasMany
+    {
+        return $this->hasMany(MmdTarget::class);
+    }
+
+    public function fundPlans(): HasMany
+    {
+        return $this->hasMany(FundPlan::class);
+    }
+
+    public function actionItems(): HasMany
+    {
+        return $this->hasMany(ActionItem::class);
+    }
+
+    public function isActive(): bool
+    {
+        return $this->status === 'enrolled';
+    }
 }

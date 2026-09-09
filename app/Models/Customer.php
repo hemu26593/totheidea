@@ -90,6 +90,36 @@ class Customer extends Model
             ->first();
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Read relationships
+    |--------------------------------------------------------------------------
+    |
+    | Retrieval only, for the internal UI. Writes go through the domain
+    | services; see the note on Enrollment.
+    |
+    */
+
+    public function mmdEntries(): HasMany
+    {
+        return $this->hasMany(MmdEntry::class);
+    }
+
+    public function positions(): HasMany
+    {
+        return $this->hasMany(Position::class);
+    }
+
+    public function hrPolicies(): HasMany
+    {
+        return $this->hasMany(HrPolicy::class);
+    }
+
+    public function aiGenerations(): HasMany
+    {
+        return $this->hasMany(AiGeneration::class);
+    }
+
     public function isArchived(): bool
     {
         return $this->archived_at !== null;

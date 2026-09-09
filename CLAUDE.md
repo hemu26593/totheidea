@@ -90,14 +90,38 @@ For every major feature:
 
 ## Current project state
 
-The repository contains the Laravel technical foundation plus **authentication
-and role-based authorization** (ADR-007 … ADR-014).
+The repository contains the Laravel technical foundation, **authentication and
+role-based authorization** (ADR-007 … ADR-014), the **complete BMP domain layer**
+(all 42 tables, their models, services and policies), and the **internal staff
+application UI** built on top of it.
 
-None of the following exist yet, and none are to be built without an explicit
-instruction to do so:
+Livewire components are the whole UI layer. They call domain services and never
+reimplement a rule: a screen that computes a figure the domain does not compute
+is a bug, not a feature.
 
-customers · batches · sessions · forms · assessments · scoring · dashboards ·
-analytics · AI features · reports · notifications
+### What is deliberately absent, and must stay absent
+
+These are open client decisions, not missing work. Nothing in the UI may invent
+an answer to any of them:
+
+- **Attendance weighting.** `AttendanceWeighting` has no implementation bound,
+  so no attendance percentage is displayed anywhere. Raw statuses and counts
+  only.
+- **MMD grain [B1].** `mmd_entries` has no unique key and no contributor
+  column. Every read aggregates, so it is correct under either reading.
+- **Heat-map bands and the Average / Good / Better / Best numeric mapping.** No
+  band, grade or verdict is rendered.
+- **G / C / M.** Carried verbatim as column headings. No expansion is shown.
+- **The `diagnostic` report.** Part of the report vocabulary, with no builder.
+  The Reports screen offers only what `ReportRegistry` actually implements.
+
+### Livewire naming trap
+
+Livewire treats `hydrate{Property}`, `dehydrate{Property}`, `updating{Property}`
+and `updated{Property}` as lifecycle hooks, and `transition()` is already a
+`Livewire\Component` method. A private helper named after a public property
+silently becomes a hook that Livewire calls with no arguments. Name helpers so
+they cannot collide.
 
 ## Authorization rules for this codebase
 

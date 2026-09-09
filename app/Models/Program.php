@@ -35,6 +35,15 @@ class Program extends Model
         return $this->hasMany(Batch::class);
     }
 
+    /**
+     * Read relationship for the internal UI. The curriculum is authored
+     * through CurriculumService; nothing is created through this relation.
+     */
+    public function sessionTemplates(): HasMany
+    {
+        return $this->hasMany(SessionTemplate::class)->orderBy('sequence');
+    }
+
     public function isArchived(): bool
     {
         return $this->archived_at !== null;

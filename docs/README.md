@@ -173,6 +173,46 @@ the server is equivalent to Super Admin**. The promotion is audited.
 ./vendor/bin/pint --test   # check without modifying
 ```
 
+## The internal application
+
+Everything below `/dashboard` is the internal staff application. There is **no
+customer login** anywhere in it: a customer is a business, not an account, and
+external participation happens through scoped, expiring access grants.
+
+| Area | Route |
+|---|---|
+| Operations console | `/dashboard` |
+| Customer directory | `/customers` |
+| Customer workspace | `/customers/{customer}` and its tabs |
+| Batches, sessions, assignments | `/batches`, `/sessions`, `/assignments` |
+| Attendance register | `/attendance` |
+| A form submission | `/forms/{submission}` |
+| Reports | `/reports` |
+| Notification dispatches | `/notifications` |
+| AI queue, one generation, prompt library | `/ai/generations`, `/ai/generations/{id}`, `/ai/prompts` |
+| Administration | `/admin/...`, `/users` |
+
+### Where the UI's rules live
+
+- **Reusable components** are anonymous Blade components in
+  `resources/views/components/ui/`. Prefer one of those to new markup.
+- **The sidebar** is `App\Support\Navigation`. It asks the same permission the
+  route's `can:` middleware asks, so a visible link is never a link the actor
+  is then refused. It is a convenience, never authorization.
+- **Customer-scoped screens** use `App\Livewire\Concerns\AuthorizesCustomerWorkspace`:
+  a `#[Locked]` customer id, re-read from the database on every request, plus
+  `assertOwnedByWorkspace()` for any record id that arrives from the browser.
+- **Domain refusals** surface through
+  `App\Livewire\Concerns\ReportsDomainFailures` as form errors rather than a
+  500 — except an isolation failure, which is a 404, because whether another
+  customer's record exists is itself information.
+
+### The rule every Livewire component follows
+
+Authorize on `mount()` **and** in every action. A public method on a Livewire
+component is an HTTP endpoint whatever the rendered page offers, so
+`@can` in a template hides a button and authorizes nothing.
+
 ## Repository conventions
 
 - `CLAUDE.md` (repository root) holds the permanent architecture, AI, data
