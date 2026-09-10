@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    The MySQL compatibility run.
+
+    Development and CI use phpunit.xml, which is SQLite in memory and fast
+    (ADR-005). Production is MySQL (ADR-006), and the differences that matter
+    between the two - reserved words, identifier length, ONLY_FULL_GROUP_BY,
+    strict mode, decimal and boolean handling - are invisible to a suite that
+    only ever runs on SQLite.
+
+    This file runs the SAME tests against a real MySQL 8 server. It is not part
+    of the default run and needs no MySQL to be installed for the normal suite
+    to pass; see docs/mysql-compatibility.md for how to stand one up.
+
+        ./vendor/bin/phpunit -c phpunit.mysql.xml
+
+    The database it names is DISPOSABLE and is rebuilt by RefreshDatabase on
+    every run. Never point it at anything you care about.
+
+    NO CREDENTIAL IS COMMITTED HERE. PHPUnit does not overwrite an environment
+    variable that is already set, so the values below are defaults that the
+    runner overrides:
+
+        DB_USERNAME=bmp DB_PASSWORD=... ./vendor/bin/phpunit -c phpunit.mysql.xml
+-->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+>
+    <testsuites>
+        <testsuite name="Unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Feature">
+            <directory>tests/Feature</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>app</directory>
+        </include>
+    </source>
+    <php>
+        <env name="APP_ENV" value="testing"/>
+        <env name="APP_MAINTENANCE_DRIVER" value="file"/>
+        <env name="BCRYPT_ROUNDS" value="4"/>
+        <env name="BROADCAST_CONNECTION" value="null"/>
+        <env name="CACHE_STORE" value="array"/>
+
+        <!-- The only difference from phpunit.xml. -->
+        <env name="DB_CONNECTION" value="mysql"/>
+        <env name="DB_HOST" value="127.0.0.1"/>
+        <env name="DB_PORT" value="3306"/>
+        <env name="DB_DATABASE" value="bmp_compat"/>
+        <env name="DB_USERNAME" value="root"/>
+        <env name="DB_PASSWORD" value=""/>
+        <env name="DB_URL" value=""/>
+
+        <env name="MAIL_MAILER" value="array"/>
+        <env name="QUEUE_CONNECTION" value="sync"/>
+        <env name="SESSION_DRIVER" value="array"/>
+        <env name="PULSE_ENABLED" value="false"/>
+        <env name="TELESCOPE_ENABLED" value="false"/>
+        <env name="NIGHTWATCH_ENABLED" value="false"/>
+    </php>
+</phpunit>
