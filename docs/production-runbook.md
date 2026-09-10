@@ -386,63 +386,92 @@ is cheaper than regenerating.
 
 ## 9. Mail and notifications
 
-**Two separate things, and only one of them works today.**
+Both paths are email, and both work once SMTP is configured. They are separate
+mechanisms, and it is worth knowing which is which.
 
-### Password reset — works as soon as SMTP is configured
-
-`User` is `Notifiable` and password reset uses Laravel's own `ResetPassword`
-notification, so it travels through the standard Mail system. Setting
-`MAIL_MAILER` and the SMTP credentials is all it needs — no code change.
-
-This matters operationally: without it, a locked-out administrator has no
-self-service recovery.
-
-> `config/mail.php` defaults to `MAIL_MAILER=log`. **Leave it unset in production
-> and password-reset emails, reset tokens and all, are written into
-> `storage/logs/laravel.log` instead of being sent.** Set it explicitly.
-
-Either GoDaddy's own mail or an external provider works — it is ordinary SMTP:
+### Required environment variables
 
 ```
 MAIL_MAILER=smtp
-MAIL_HOST=smtpout.secureserver.net   # or an external provider
+MAIL_HOST=smtpout.secureserver.net       # GoDaddy, or any provider
 MAIL_PORT=465
-MAIL_SCHEME=smtps                    # 587 + tls is the usual alternative
 MAIL_USERNAME=programme@yourdomain.com
-MAIL_PASSWORD=...
+MAIL_PASSWORD=...                        # the mailbox password
+MAIL_ENCRYPTION=ssl                      # or tls on port 587
 MAIL_FROM_ADDRESS="programme@yourdomain.com"
 MAIL_FROM_NAME="BMP Digital Platform"
+
+NOTIFICATIONS_CHANNEL=mail               # 'none' switches BMP notifications off
 ```
 
-An external provider (SES, Postmark, Mailgun, Brevo) is worth preferring:
-shared-hosting SMTP carries low sending limits and a shared reputation.
+Nothing about a provider is compiled in. `MailChannelDispatcher` hands the
+message to Laravel's Mail layer, so any transport Laravel supports works —
+GoDaddy's own SMTP, or SES, Postmark, Mailgun, Brevo. An external provider is
+worth preferring: shared-hosting SMTP carries low sending limits and a shared
+reputation.
 
-### BMP notifications — do NOT work, and SMTP will not change that
+Ports and encryption vary by provider — GoDaddy commonly uses 465/SSL or
+587/TLS. Confirm the values in cPanel rather than assuming them.
 
-The pipeline is complete: eligibility, scheduling, deduplication, queueing,
-retry and logging all function. What does not exist is a delivery channel.
-`ChannelDispatcher` resolves to `UnconfiguredChannelDispatcher`, whose only
-behaviour is to throw, and it is the sole implementation in the codebase.
+> **`config/mail.php` defaults to `MAIL_MAILER=log`.** Leave it unset and mail is
+> written into `storage/logs/laravel.log` instead of being sent — including
+> password-reset tokens. In production the notification dispatcher refuses to
+> run on a non-delivering mailer (`log`, `array`, `null`) rather than record a
+> send that did not happen, so notifications fail loudly instead of silently.
+> Password reset has no such guard: it would quietly log. **Set `MAIL_MAILER`.**
 
-Every BMP notification dispatch will therefore:
+### Password reset
 
-- be created as a row with `status = pending`
-- be attempted by `DispatchNotificationJob`
-- throw `ChannelNotConfiguredException`
-- retry per `config/notifications.php`, then settle at `status = failed` with the
-  reason recorded
+Uses Laravel's own `Notifiable` / `ResetPassword` path. Independent of the BMP
+channel: it keeps working with `NOTIFICATIONS_CHANNEL=none`, and a failing BMP
+transport does not affect it. Without it a locked-out administrator has no
+self-service recovery.
 
-It **fails safely and visibly** — nothing is silently dropped, nothing is
-recorded as sent that was not, and no other part of the platform is affected.
-But no participant or staff member receives anything.
+### BMP notifications — the nine SOW triggers
 
-**Turning it on is a code change, not configuration**: a class implementing
-`App\Domain\Notifications\Contracts\ChannelDispatcher` that sends through
-Laravel's Mail and returns a `DispatchResult`, bound in `AppServiceProvider` in
-place of `UnconfiguredChannelDispatcher`. That is deliberate — a no-op dispatcher
-would record sends that never happened, which is worse than an obvious gap.
+Delivered by `MailChannelDispatcher` through `DispatchNotificationJob`:
 
-WhatsApp delivery is out of scope and is not implemented.
+```
+trigger → candidate → dedupe → notification_dispatches row (pending)
+        → queued job → Mail → transport
+        → sent (with the transport's Message-ID) or failed (with the reason)
+```
+
+- **Email only.** WhatsApp, SMS and push are out of scope; a dispatch for a
+  channel with no driver is a recorded failure, never a quiet success.
+- **Sent is the transport's word.** The row is marked sent only after Mail has
+  handed the message over, and it stores that transport's own Message-ID.
+- **Failures retry** per `config/notifications.php`
+  (`NOTIFICATIONS_MAX_ATTEMPTS`, default 3, backoff 60/300/900s), stay `pending`
+  while attempts remain, then settle at `failed` with the reason.
+- **The address is the snapshot.** Mail goes to `address_used` as recorded when
+  the dispatch was created, never a fresh lookup — so the row says where the
+  message actually went.
+- **The email carries no business data.** It says something needs attention and
+  names the business it concerns. No figure, score, balance, attendance mark or
+  assignment title is put in an email: an inbox is not somewhere the platform
+  controls, and a message that carries no business data cannot carry the wrong
+  business's. Staff recipients get a link to the platform; customer contacts do
+  not, because participants have no account.
+
+### Switching notifications off
+
+`NOTIFICATIONS_CHANNEL=none` binds the dispatcher that refuses. Every dispatch is
+then recorded as `failed` with the reason. That is deliberate: a no-op reporting
+success would put sends that never happened into the one table that answers "did
+we actually contact this business?".
+
+### Verifying it on the server
+
+```bash
+php artisan tinker --execute="Mail::raw('BMP smtp check', fn(\$m) => \$m->to('you@yourdomain.com')->subject('BMP smtp check'));"
+```
+
+If that arrives, notifications will send. Then watch the Notifications screen, or:
+
+```sql
+SELECT status, COUNT(*) FROM notification_dispatches GROUP BY status;
+```
 
 ## 10. Backups
 

@@ -296,12 +296,18 @@ class NotificationDispatchTest extends TestCase
     // --- Failure and retry -------------------------------------------------
 
     #[Test]
-    public function no_provider_is_wired_and_that_is_recorded_as_a_failure(): void
+    public function a_channel_with_no_driver_is_recorded_as_a_failure(): void
     {
+        // Email is now delivered (MailChannelDispatcher), so the invariant this
+        // guards has moved rather than gone: wherever there is NO driver -
+        // notifications switched off with NOTIFICATIONS_CHANNEL=none, or a
+        // channel like WhatsApp that was never implemented - the dispatch must
+        // be a recorded failure. A no-op reporting success would put false
+        // sends in the one table that answers "did we contact them?".
+        config(['notifications.channel' => 'none']);
+
         $dispatch = NotificationDispatch::factory()->create();
 
-        // The default binding refuses. A no-op that reported success would put
-        // false sends in the one table that answers "did we contact them?".
         $this->assertInstanceOf(UnconfiguredChannelDispatcher::class, app(ChannelDispatcher::class));
 
         try {
@@ -321,6 +327,10 @@ class NotificationDispatchTest extends TestCase
     public function a_failure_within_the_retry_budget_stays_pending(): void
     {
         config()->set('notifications.max_attempts', 3);
+        // Retry behaviour is the job's, not the channel's, so it is exercised
+        // through a channel that refuses - which is what a real transport
+        // failure looks like to the job.
+        config(['notifications.channel' => 'none']);
         $dispatch = NotificationDispatch::factory()->create();
 
         $this->attemptAndSwallow($dispatch);
@@ -335,6 +345,7 @@ class NotificationDispatchTest extends TestCase
     public function a_dispatch_that_exhausts_its_retries_is_marked_failed(): void
     {
         config()->set('notifications.max_attempts', 2);
+        config(['notifications.channel' => 'none']);
         $dispatch = NotificationDispatch::factory()->create();
 
         $this->attemptAndSwallow($dispatch);

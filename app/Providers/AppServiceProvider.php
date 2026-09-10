@@ -8,6 +8,7 @@ use App\Domain\Ai\Contracts\AiProvider;
 use App\Domain\Ai\Providers\AnthropicMessagesProvider;
 use App\Domain\Ai\Providers\UnconfiguredAiProvider;
 use App\Domain\Notifications\Contracts\ChannelDispatcher;
+use App\Domain\Notifications\MailChannelDispatcher;
 use App\Domain\Notifications\UnconfiguredChannelDispatcher;
 use App\Exceptions\AiProviderNotConfiguredException;
 use App\Listeners\RecordAuthenticationAudit;
@@ -54,17 +55,28 @@ class AppServiceProvider extends ServiceProvider
     /**
      * The delivery seam for notifications.
      *
-     * Bound to a dispatcher that REFUSES. Every part of the notification
-     * system above it is finished; no provider is wired, and WhatsApp and paid
-     * messaging are out of scope for this phase. A no-op that reported success
-     * would put false sends in notification_dispatches, which is the one table
-     * that answers "did we actually contact this business?".
+     * EMAIL ONLY. MailChannelDispatcher hands the message to Laravel's Mail
+     * layer, so every SMTP detail is ordinary Laravel configuration read from
+     * the environment and nothing about a provider is known here. WhatsApp, SMS
+     * and push remain out of scope, and a dispatch for any channel other than
+     * email is a recorded failure rather than a quiet success.
      *
-     * Swapping this binding is the whole change needed to start delivering.
+     * UnconfiguredChannelDispatcher is kept, not deleted. It is what
+     * `NOTIFICATIONS_CHANNEL=none` binds, and it is the honest way to run with
+     * notifications switched off: every dispatch is recorded as failed with the
+     * reason, instead of a no-op reporting sends that never happened into the
+     * one table that answers "did we actually contact this business?".
      */
     private function registerNotificationChannel(): void
     {
-        $this->app->bind(ChannelDispatcher::class, UnconfiguredChannelDispatcher::class);
+        // Resolved lazily rather than decided here: the container is built
+        // before configuration is necessarily final, and a closure keeps the
+        // choice readable from config at the moment a dispatcher is needed.
+        $this->app->bind(ChannelDispatcher::class, static function ($app): ChannelDispatcher {
+            return config('notifications.channel', 'mail') === 'none'
+                ? $app->make(UnconfiguredChannelDispatcher::class)
+                : $app->make(MailChannelDispatcher::class);
+        });
     }
 
     /**

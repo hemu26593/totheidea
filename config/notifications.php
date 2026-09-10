@@ -71,6 +71,29 @@ return [
 
     'queue' => env('NOTIFICATIONS_QUEUE', 'default'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Delivery channel
+    |--------------------------------------------------------------------------
+    |
+    | 'mail'  - deliver by email through Laravel's Mail layer, which means the
+    |           SMTP host, port, credentials and encryption are the standard
+    |           MAIL_* variables and nothing about a provider is known to this
+    |           application.
+    |
+    | 'none'  - bind the dispatcher that refuses. Every dispatch is then
+    |           recorded as failed with the reason, which is the honest way to
+    |           run with notifications switched off; a no-op that reported
+    |           success would put sends that never happened into
+    |           notification_dispatches.
+    |
+    | Email is the only channel implemented. WhatsApp, SMS and push are out of
+    | scope, and a dispatch for a channel with no driver fails rather than
+    | silently succeeding.
+    |
+    */
+    'channel' => env('NOTIFICATIONS_CHANNEL', 'mail'),
+
     // Retries per dispatch. A failed send is retried with backoff; the attempt
     // count and the last error are recorded on the row either way.
     'max_attempts' => (int) env('NOTIFICATIONS_MAX_ATTEMPTS', 3),
