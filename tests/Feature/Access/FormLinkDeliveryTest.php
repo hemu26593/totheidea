@@ -179,6 +179,26 @@ class FormLinkDeliveryTest extends TestCase
     }
 
     #[Test]
+    public function a_link_expires_fourteen_days_after_it_is_sent(): void
+    {
+        // Fourteen days is the client's confirmed production default. Pinned
+        // here so a change to it is a deliberate one rather than a drift.
+        $this->assertSame(14, (int) config('access.link_expiry_days'));
+
+        $fixture = $this->fixture();
+
+        $this->travelTo('2026-09-12 09:00:00');
+        app(FormLinkService::class)->send($fixture['enrollment'], $fixture['template'], $this->admin());
+
+        $this->assertSame(
+            '2026-09-26 09:00:00',
+            AccessGrant::query()->sole()->expires_at->format('Y-m-d H:i:s'),
+        );
+
+        $this->travelBack();
+    }
+
+    #[Test]
     public function a_grant_is_never_issued_without_a_configured_expiry(): void
     {
         config(['access.link_expiry_days' => 0]);

@@ -23,17 +23,16 @@ return [
     | How long a form link stays usable
     |--------------------------------------------------------------------------
     |
-    | *** THIS VALUE IS A PLACEHOLDER AND NEEDS THE CLIENT'S ANSWER. ***
+    | FOURTEEN DAYS, CONFIRMED BY THE CLIENT AS THE PRODUCTION DEFAULT.
     |
-    | Nothing in the repository stated a link lifetime before this feature, so
-    | nothing here is a business decision that was made - it is a default chosen
-    | only so the application can never issue an open-ended grant, which the
-    | architecture forbids outright.
+    | This was an open question while the feature was built and is now settled:
+    | a business has two weeks to complete a form it was sent. The trade it
+    | resolves is the ordinary one - a shorter window means chasing businesses
+    | for a fresh link, a longer one means a live capability sitting in an inbox.
     |
-    | Set ACCESS_FORM_LINK_EXPIRY_DAYS once the programme has decided how long a
-    | business should have to complete a form it was sent. The trade is the
-    | ordinary one: a short window means chasing businesses for a fresh link, a
-    | long one means a live capability sitting in an inbox for weeks.
+    | Override per environment with ACCESS_FORM_LINK_EXPIRY_DAYS. A value below 1
+    | is refused at issue time rather than producing an open-ended grant, which
+    | the architecture forbids outright.
     |
     */
     'link_expiry_days' => (int) env('ACCESS_FORM_LINK_EXPIRY_DAYS', 14),
