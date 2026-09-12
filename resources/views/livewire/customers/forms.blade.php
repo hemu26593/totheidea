@@ -6,9 +6,106 @@
         @endcan
     </x-slot:actions>
 
+    {{-- Rendered here, not only by the layout's <x-ui.flash>: that sits outside
+         the component root, and a Livewire update re-renders only the component,
+         so a success confirmed mid-page would otherwise stay invisible until the
+         next full page load. --}}
+    @if (session('status'))
+        <x-ui.alert tone="success" class="mb-4">{{ session('status') }}</x-ui.alert>
+    @endif
+
     @error('domain')
         <x-ui.alert tone="danger" class="mb-4">{{ $message }}</x-ui.alert>
     @enderror
+
+    {{-- What this business can be sent. One row per (enrolment, published
+         form): that pair is what a link is for and what the grant is scoped to.
+         Every button here re-checks the policy and the workspace server-side;
+         hiding one is convenience, never authorization. --}}
+    <x-ui.card title="Send a form to this business"
+               subtitle="A link opens one form, expires, and is not a login. The business's own contact receives it."
+               class="mb-5">
+        <x-ui.table :headings="['Form', 'Version', 'Batch', 'Customer link', '>']" class="shadow-none ring-0">
+            @forelse ($sendable as $row)
+                @php
+                    $grant = $row->grant;
+                    $linkIsLive = $grant
+                        && $grant->revoked_at === null
+                        && $grant->expires_at?->isFuture()
+                        && $grant->use_count < $grant->max_uses;
+                @endphp
+
+                <tr wire:key="sendable-{{ $row->enrollment->id }}-{{ $row->template->id }}" class="hover:bg-slate-50">
+                    <x-ui.td class="font-medium">{{ $row->template->name }}</x-ui.td>
+                    <x-ui.td muted>v{{ $row->version?->version_number }}</x-ui.td>
+                    <x-ui.td muted>{{ $row->enrollment->batch?->code }}</x-ui.td>
+
+                    <x-ui.td>
+                        @if (! $grant)
+                            <span class="text-slate-400">Not sent</span>
+                        @else
+                            @if ($grant->revoked_at)
+                                <x-ui.badge tone="danger">Withdrawn</x-ui.badge>
+                            @elseif ($grant->use_count >= $grant->max_uses)
+                                <x-ui.badge tone="success">Used</x-ui.badge>
+                            @elseif ($grant->expires_at?->isPast())
+                                <x-ui.badge tone="warning">Expired</x-ui.badge>
+                            @else
+                                <x-ui.badge tone="success">Active</x-ui.badge>
+                            @endif
+
+                            <div class="mt-1 text-xs text-slate-500">
+                                <div class="truncate">Sent to {{ $grant->customerContact?->email ?? '—' }}</div>
+                                <div>
+                                    {{ $grant->issued_at?->format('d M Y H:i') }}
+                                    @if ($linkIsLive)
+                                        · expires {{ $grant->expires_at?->format('d M Y') }}
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
+                    </x-ui.td>
+
+                    <x-ui.td align="right">
+                        <div class="flex flex-wrap items-center justify-end gap-1.5">
+                            @can('create', App\Models\AccessGrant::class)
+                                @if ($row->sendable)
+                                    {{-- wire:loading disables the button while the send is in
+                                         flight, so a double click cannot start a second one.
+                                         The service revokes any live grant before issuing
+                                         anyway, so even a race leaves exactly one live link. --}}
+                                    <x-ui.button size="sm"
+                                                 :variant="$linkIsLive ? 'secondary' : 'primary'"
+                                                 wire:click="sendFormLink({{ $row->enrollment->id }}, {{ $row->template->id }})"
+                                                 wire:loading.attr="disabled"
+                                                 wire:target="sendFormLink({{ $row->enrollment->id }}, {{ $row->template->id }})">
+                                        {{ $grant ? 'Resend form link' : 'Send form link' }}
+                                    </x-ui.button>
+                                @endif
+                            @endcan
+
+                            @if ($linkIsLive)
+                                @can('revoke', $grant)
+                                    <x-ui.button size="sm"
+                                                 wire:click="revokeFormLink({{ $row->enrollment->id }}, {{ $row->template->id }})"
+                                                 wire:loading.attr="disabled"
+                                                 wire:target="revokeFormLink({{ $row->enrollment->id }}, {{ $row->template->id }})">
+                                        Revoke link
+                                    </x-ui.button>
+                                @endcan
+                            @endif
+                        </div>
+
+                        <x-ui.loading target="sendFormLink({{ $row->enrollment->id }}, {{ $row->template->id }})"
+                                      label="Sending…" class="mt-1" />
+                    </x-ui.td>
+                </tr>
+            @empty
+                <x-ui.empty-row :colspan="5" title="Nothing to send yet"
+                                description="A business needs an active enrolment and a published form before it can be sent a link." />
+            @endforelse
+        </x-ui.table>
+    </x-ui.card>
 
     <x-ui.table :headings="['Form', 'Version', 'Batch', 'Status', 'Submitted', 'Scores', '>']">
         @forelse ($submissions as $submission)
