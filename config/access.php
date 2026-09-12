@@ -18,6 +18,25 @@ return [
     |
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | How long a form link stays usable
+    |--------------------------------------------------------------------------
+    |
+    | FOURTEEN DAYS, CONFIRMED BY THE CLIENT AS THE PRODUCTION DEFAULT.
+    |
+    | This was an open question while the feature was built and is now settled:
+    | a business has two weeks to complete a form it was sent. The trade it
+    | resolves is the ordinary one - a shorter window means chasing businesses
+    | for a fresh link, a longer one means a live capability sitting in an inbox.
+    |
+    | Override per environment with ACCESS_FORM_LINK_EXPIRY_DAYS. A value below 1
+    | is refused at issue time rather than producing an open-ended grant, which
+    | the architecture forbids outright.
+    |
+    */
+    'link_expiry_days' => (int) env('ACCESS_FORM_LINK_EXPIRY_DAYS', 14),
+
     'redemption' => [
 
         /*
