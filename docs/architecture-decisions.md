@@ -700,3 +700,64 @@ column shows the effective result.
 Permissions alone do not decide user administration. The rank rules and
 self-protection guards in ADR-012 apply on top, which is why an Admin holding
 `users.edit` still cannot edit a Super Admin.
+
+---
+
+## ADR-016: A confirmed customer enters the programme by batch assignment alone
+
+**Status:** Accepted
+**Date:** 2026-09-15
+
+### Context
+
+The client confirmed a change to the business rule: every customer entered into
+this system is already a final, confirmed customer. The workflow the operator
+performed until now was
+
+```
+Customer → (activate) → Enrol → Batch
+```
+
+which asked them to complete two further actions after creating a record that
+was, by the client's account, already complete.
+
+Two things are worth separating, because the brief that prompted this named
+only the first. There was never a payment gate: nothing in the codebase blocked
+any feature on payment, `enrollments.payment_due_date` is nullable and read only
+by notification trigger 7, and an enrolment has always been `status = 'enrolled'`
+from the moment it exists. What did exist was a `prospect` customer status with
+a separate **Activate** action, and an enrolment step the operator had to
+remember on a different screen.
+
+### Decision
+
+Programme entry is one action. `CustomerService::createInBatch()` creates the
+customer and, when a batch is chosen, the enrolment, inside one transaction. A
+customer is created with `status = 'active'`, because a confirmed customer was
+never a prospect.
+
+**Enrollment is retained, unchanged, as an internal record.** Twelve tables
+carry a NOT NULL `enrollment_id` and resolve customer isolation through it
+(ADR-004); it is also what keeps a repeat participant's two runs apart. It is no
+longer a step anybody performs — the UI speaks of Programme and Batch, and the
+word "enrol" has left the operator's vocabulary — but it remains the ownership
+spine and nothing about its structure, its service or its policy has moved.
+
+Assignment stays optional, so a customer may still be recorded before their
+batch is known, and changing which batch an existing customer sits in remains on
+the Programme screen, where it carries its own history.
+
+### Consequences
+
+`payment_due_date` and `PaymentDueTrigger` are untouched: they are a reminder,
+not a prerequisite, and removing them would delete a live SOW requirement to fix
+a gate that never existed. The field is absent from customer creation and stays
+on the Programme screen, worded so it cannot be mistaken for a condition of
+taking part.
+
+The `prospect` status remains a valid value and stays in
+`CustomerDirectory::STATUSES`, so rows created under the previous rule are
+unchanged and still listable. The column default is untouched; status is set on
+the insert instead, so nothing outside `CustomerService` changes behaviour.
+
+No migration was required, and no existing data was rewritten.

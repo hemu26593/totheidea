@@ -89,7 +89,7 @@
         </x-ui.card>
     </div>
 
-    <x-ui.card title="Enrolments" subtitle="Programme runs this business is part of." class="mt-5" :padding="false">
+    <x-ui.card title="Programme" subtitle="Batches this business is part of." class="mt-5" :padding="false">
         <x-slot:actions>
             <x-ui.button size="sm" :href="route('customers.enrollments', $customer)">Manage</x-ui.button>
         </x-slot:actions>
@@ -106,8 +106,8 @@
                     </x-ui.td>
                 </tr>
             @empty
-                <x-ui.empty-row :colspan="5" title="Not enrolled yet"
-                                description="Enrol this business in a batch to start the programme." />
+                <x-ui.empty-row :colspan="5" title="No batch assigned yet"
+                                description="Assign this business to a batch to start the programme." />
             @endforelse
         </x-ui.table>
     </x-ui.card>

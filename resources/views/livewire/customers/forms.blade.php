@@ -156,7 +156,7 @@
 
             @if ($enrollments->isEmpty())
                 <x-ui.alert tone="warning">
-                    This business is not enrolled in a batch yet. A submission binds to an enrolment.
+                    This business is not assigned to a batch yet. Assign one and its forms appear here.
                 </x-ui.alert>
             @elseif ($templates->isEmpty())
                 <x-ui.alert tone="warning">

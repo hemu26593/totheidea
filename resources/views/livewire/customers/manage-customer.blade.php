@@ -1,6 +1,6 @@
 <div>
     <x-ui.page-header :title="$customer ? 'Edit customer' : 'New customer'"
-                      :subtitle="$customer ? $customer->name : 'A business in the programme. Customers do not have accounts and never sign in.'"
+                      :subtitle="$customer ? $customer->name : 'A confirmed customer. Choose their batch and they are active in the programme straight away.'"
                       :breadcrumbs="array_filter([
                           'Customers' => route('customers.index'),
                           ($customer?->name ?? 'New') => $customer ? route('customers.show', $customer) : null,
@@ -21,6 +21,27 @@
                         :error="$errors->first('code')">
                 <x-ui.input id="code" wire:model="code" class="font-mono" />
             </x-ui.field>
+
+            {{-- Programme entry, in one step. Choosing a batch here makes the
+                 business an active participant on save: there is no payment
+                 confirmation and no separate enrolment action to follow. --}}
+            @if (! $customer && $batches->isNotEmpty())
+                <x-ui.field label="Batch" for="batchId"
+                            hint="The business becomes an active participant in this batch as soon as you save. You can leave it unset and assign a batch later."
+                            :error="$errors->first('batchId')">
+                    <x-ui.select id="batchId" wire:model="batchId">
+                        <option value="">Assign a batch later</option>
+                        @foreach ($batches as $batch)
+                            <option value="{{ $batch->id }}">
+                                {{ $batch->program?->name ? $batch->program->name.' — ' : '' }}{{ $batch->name }}
+                                @if ($batch->starts_on)
+                                    ({{ $batch->starts_on->format('d M Y') }})
+                                @endif
+                            </option>
+                        @endforeach
+                    </x-ui.select>
+                </x-ui.field>
+            @endif
 
             <div class="flex items-center gap-2 pt-2">
                 <x-ui.button variant="primary" type="submit">
