@@ -29,7 +29,7 @@
 
     <x-ui.table :headings="['#', 'Session', 'Batch', 'Planned', 'Actual', 'Status', 'Marks', '>']">
         @forelse ($sessions as $session)
-            <tr wire:key="session-{{ $session->id }}" class="hover:bg-slate-50">
+            <tr wire:key="session-{{ $session->id }}" class="hover:bg-elevated">
                 <x-ui.td muted class="tabular-nums">{{ $session->sessionTemplate?->sequence }}</x-ui.td>
                 <x-ui.td class="font-medium">{{ $session->sessionTemplate?->title }}</x-ui.td>
                 <x-ui.td muted>{{ $session->batch?->code }}</x-ui.td>

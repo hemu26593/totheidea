@@ -18,7 +18,7 @@
                         <x-ui.td>
                             <p class="font-medium">{{ $position->title }}</p>
                             @if ($position->kra)
-                                <p class="mt-0.5 text-xs text-slate-500">{{ Str::limit($position->kra, 90) }}</p>
+                                <p class="mt-0.5 text-xs text-ink-3">{{ Str::limit($position->kra, 90) }}</p>
                             @endif
                         </x-ui.td>
                         <x-ui.td muted>{{ $position->holder_name ?? 'Vacant' }}</x-ui.td>
@@ -46,13 +46,13 @@
                 @endcan
             </x-slot:actions>
 
-            <div class="divide-y divide-slate-100">
+            <div class="divide-y divide-line">
                 @forelse ($policies as $policy)
                     <div class="px-4 py-3" wire:key="policy-{{ $policy->id }}">
                         <div class="flex flex-wrap items-start justify-between gap-2">
                             <div class="min-w-0">
-                                <p class="font-medium text-slate-900">{{ $policy->title }}</p>
-                                <p class="text-xs text-slate-500">
+                                <p class="font-medium text-ink">{{ $policy->title }}</p>
+                                <p class="text-xs text-ink-3">
                                     {{ $policy->version_label ?? 'No version label' }}
                                     @if ($policy->published_at)
                                         · published {{ $policy->published_at->format('d M Y') }}
@@ -96,9 +96,9 @@
                         @if ($policy->acknowledgements->isNotEmpty())
                             <ul class="mt-2 flex flex-wrap gap-1.5">
                                 @foreach ($policy->acknowledgements as $ack)
-                                    <li class="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
+                                    <li class="rounded bg-elevated px-2 py-0.5 text-xs text-ink-2">
                                         {{ $ack->acknowledged_name }}
-                                        <span class="text-slate-400">· {{ $ack->position?->title }}</span>
+                                        <span class="text-ink-3">· {{ $ack->position?->title }}</span>
                                     </li>
                                 @endforeach
                             </ul>
@@ -173,7 +173,7 @@
     <x-ui.modal :show="$acknowledgingPolicyId !== null" title="Record an acknowledgement"
                 close="$set('acknowledgingPolicyId', null)">
         <form wire:submit="recordAcknowledgement" class="space-y-4">
-            <p class="text-sm text-slate-600">
+            <p class="text-sm text-ink-2">
                 Acknowledgements attach to a position, not to a user account — the people signing off are
                 the business's own staff.
             </p>

@@ -4,7 +4,7 @@
                       :breadcrumbs="['Batches' => route('batches.index'), $batch->name => null]">
         <x-slot:actions>
             <x-ui.status-badge :status="$batch->status" />
-            <span class="rounded bg-slate-100 px-2 py-1 font-mono text-xs text-slate-600">{{ $batch->code }}</span>
+            <span class="rounded bg-elevated px-2 py-1 font-mono text-xs text-ink-2">{{ $batch->code }}</span>
 
             @can('create', App\Models\SessionInstance::class)
                 <x-ui.button size="sm" variant="primary" wire:click="startScheduling">Schedule session</x-ui.button>

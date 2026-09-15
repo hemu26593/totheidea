@@ -43,7 +43,7 @@
                            :subtitle="$section->description">
                     <div class="space-y-5">
                         @foreach ($section->questions as $question)
-                            <div wire:key="question-{{ $question->id }}" class="border-b border-slate-100 pb-4 last:border-0 last:pb-0">
+                            <div wire:key="question-{{ $question->id }}" class="border-b border-line pb-4 last:border-0 last:pb-0">
                                 <x-ui.field :label="$question->label"
                                             :required="(bool) $question->is_required"
                                             :hint="$question->help_text">
@@ -84,17 +84,17 @@
                                         @case (QuestionType::SelectOne)
                                             <div class="space-y-1.5">
                                                 @foreach ($question->options as $option)
-                                                    <label class="flex items-start gap-2 text-sm text-slate-700">
+                                                    <label class="flex items-start gap-2 text-sm text-ink-2">
                                                         <input type="radio"
                                                                value="{{ $option->id }}"
                                                                @checked(in_array($option->id, (array) ($selections[$question->id] ?? []), false))
                                                                wire:click="$set('selections.{{ $question->id }}', [{{ $option->id }}]); saveAnswer({{ $question->id }})"
                                                                @disabled($disabled)
-                                                               class="mt-0.5 border-slate-300 text-slate-900 focus:ring-slate-900">
+                                                               class="mt-0.5 border-line text-ink focus:ring-gold">
                                                         <span>
                                                             {{ $option->label }}
                                                             @if ($option->label_secondary)
-                                                                <span class="text-slate-400">({{ $option->label_secondary }})</span>
+                                                                <span class="text-ink-3">({{ $option->label_secondary }})</span>
                                                             @endif
                                                         </span>
                                                     </label>
@@ -105,13 +105,13 @@
                                         @case (QuestionType::SelectMany)
                                             <div class="space-y-1.5">
                                                 @foreach ($question->options as $option)
-                                                    <label class="flex items-start gap-2 text-sm text-slate-700">
+                                                    <label class="flex items-start gap-2 text-sm text-ink-2">
                                                         <input type="checkbox"
                                                                value="{{ $option->id }}"
                                                                wire:model="selections.{{ $question->id }}"
                                                                wire:change="saveAnswer({{ $question->id }})"
                                                                @disabled($disabled)
-                                                               class="mt-0.5 rounded border-slate-300 text-slate-900 focus:ring-slate-900">
+                                                               class="mt-0.5 rounded border-line text-ink focus:ring-gold">
                                                         <span>{{ $option->label }}</span>
                                                     </label>
                                                 @endforeach
@@ -140,7 +140,7 @@
 
         <div class="space-y-5">
             <x-ui.card title="Submission">
-                <dl class="divide-y divide-slate-100">
+                <dl class="divide-y divide-line">
                     <x-ui.definition term="Participant">
                         {{ $submission->enrollment?->customer?->name }}
                     </x-ui.definition>
@@ -159,7 +159,7 @@
                     </x-ui.definition>
                 </dl>
 
-                <p class="mt-3 border-t border-slate-100 pt-3 text-xs text-slate-500">
+                <p class="mt-3 border-t border-line pt-3 text-xs text-ink-3">
                     A submission binds to the exact form version it was answered against, so what was asked
                     stays answerable even after the form moves on.
                 </p>
@@ -172,17 +172,17 @@
                             <tr wire:key="score-{{ $score->id }}">
                                 <x-ui.td>
                                     {{ $score->skillArea?->name ?? Str::headline($score->score_type) }}
-                                    <span class="ml-1 text-xs text-slate-400">{{ $score->scheme_version }}</span>
+                                    <span class="ml-1 text-xs text-ink-3">{{ $score->scheme_version }}</span>
                                 </x-ui.td>
                                 <x-ui.td align="right" class="tabular-nums">
                                     {{ rtrim(rtrim((string) $score->raw_score, '0'), '.') }}
-                                    <span class="text-slate-400">/ {{ rtrim(rtrim((string) $score->max_score, '0'), '.') }}</span>
+                                    <span class="text-ink-3">/ {{ rtrim(rtrim((string) $score->max_score, '0'), '.') }}</span>
                                 </x-ui.td>
                             </tr>
                         @endforeach
                     </x-ui.table>
 
-                    <p class="mt-3 text-xs text-slate-500">
+                    <p class="mt-3 text-xs text-ink-3">
                         No band or verdict is shown. Heat-map thresholds are undefined, and the
                         Average / Good / Better / Best values are categorical with no numeric mapping —
                         so neither is invented here.

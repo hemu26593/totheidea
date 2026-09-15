@@ -4,11 +4,13 @@
 ])
 
 @php
+    // A dark surface with a coloured edge and coloured text, not a slab of
+    // colour: the message stays readable and the page stays calm.
     $classes = match ($tone) {
-        'success' => 'bg-emerald-50 text-emerald-800 ring-emerald-200',
-        'warning' => 'bg-amber-50 text-amber-900 ring-amber-200',
-        'danger' => 'bg-rose-50 text-rose-800 ring-rose-200',
-        default => 'bg-sky-50 text-sky-900 ring-sky-200',
+        'success' => 'bg-success-wash text-success ring-success-line',
+        'warning' => 'bg-warning-wash text-warning ring-warning-line',
+        'danger' => 'bg-danger-wash text-danger ring-danger-line',
+        default => 'bg-info-wash text-info ring-info-line',
     };
 @endphp
 

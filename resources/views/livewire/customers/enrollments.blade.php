@@ -32,7 +32,7 @@
                 </x-slot:actions>
 
                 <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <dl class="divide-y divide-slate-100">
+                    <dl class="divide-y divide-line">
                         <x-ui.definition term="Batch code">
                             <span class="font-mono text-xs">{{ $enrollment->batch?->code }}</span>
                         </x-ui.definition>
@@ -41,7 +41,7 @@
                         </x-ui.definition>
                     </dl>
 
-                    <dl class="divide-y divide-slate-100">
+                    <dl class="divide-y divide-line">
                         <x-ui.definition term="Enrolled">
                             {{ $enrollment->enrolled_at?->format('d M Y') }}
                         </x-ui.definition>
@@ -50,12 +50,12 @@
                         </x-ui.definition>
                     </dl>
 
-                    <dl class="divide-y divide-slate-100">
+                    <dl class="divide-y divide-line">
                         <x-ui.definition term="Attendance marks">{{ $enrollment->attendances_count }}</x-ui.definition>
                         <x-ui.definition term="Form submissions">{{ $enrollment->form_submissions_count }}</x-ui.definition>
                     </dl>
 
-                    <dl class="divide-y divide-slate-100">
+                    <dl class="divide-y divide-line">
                         <x-ui.definition term="Assignment submissions">
                             {{ $enrollment->assignment_submissions_count }}
                         </x-ui.definition>
@@ -69,7 +69,7 @@
                     </x-ui.alert>
                 @endif
 
-                <div class="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
+                <div class="mt-4 flex flex-wrap gap-2 border-t border-line pt-3">
                     @can('sessions.view')
                         <x-ui.button size="sm" :href="route('customers.sessions', $customer)">Sessions</x-ui.button>
                     @endcan
@@ -84,7 +84,7 @@
                     @endcan
                 </div>
 
-                <p class="mt-3 text-xs text-slate-500">
+                <p class="mt-3 text-xs text-ink-3">
                     Progress is not shown as a single percentage: attendance weighting and completion
                     weighting are open client decisions, and the counts above are facts rather than a
                     formula.
@@ -132,7 +132,7 @@
 
     <x-ui.modal :show="$withdrawingId !== null" title="Withdraw enrolment" close="$set('withdrawingId', null)">
         <form wire:submit="withdraw" class="space-y-4">
-            <p class="text-sm text-slate-600">
+            <p class="text-sm text-ink-2">
                 Withdrawal is recorded with its reason and stays on the enrolment. Nothing already
                 submitted is removed.
             </p>

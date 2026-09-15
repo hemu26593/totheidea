@@ -4,12 +4,12 @@
         @forelse ($sessions as $session)
             @php $mark = $marks[$session->id] ?? null; @endphp
 
-            <tr wire:key="session-{{ $session->id }}" class="hover:bg-slate-50">
+            <tr wire:key="session-{{ $session->id }}" class="hover:bg-elevated">
                 <x-ui.td muted class="tabular-nums">{{ $session->sessionTemplate?->sequence }}</x-ui.td>
                 <x-ui.td>
                     <p class="font-medium">{{ $session->sessionTemplate?->title }}</p>
                     @if ($session->sessionTemplate?->theme)
-                        <p class="text-xs text-slate-500">{{ $session->sessionTemplate->theme }}</p>
+                        <p class="text-xs text-ink-3">{{ $session->sessionTemplate->theme }}</p>
                     @endif
                 </x-ui.td>
                 <x-ui.td muted>{{ $session->batch?->code }}</x-ui.td>
@@ -20,7 +20,7 @@
                     @if ($mark)
                         <x-ui.status-badge :status="$mark->status" />
                     @else
-                        <span class="text-xs text-slate-400">Not marked</span>
+                        <span class="text-xs text-ink-3">Not marked</span>
                     @endif
                 </x-ui.td>
                 <x-ui.td muted class="tabular-nums">{{ $session->assignment_instances_count }}</x-ui.td>

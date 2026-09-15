@@ -27,7 +27,7 @@
                     <x-ui.button variant="primary" wire:click="export('pdf')">Export PDF</x-ui.button>
                     <x-ui.button wire:click="export('csv')">Export CSV</x-ui.button>
                 @else
-                    <p class="pb-2 text-xs text-slate-500">
+                    <p class="pb-2 text-xs text-ink-3">
                         Exporting writes a file that leaves the system, which is a separate permission.
                     </p>
                 @endcan

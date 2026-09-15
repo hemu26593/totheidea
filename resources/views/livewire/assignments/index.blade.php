@@ -17,9 +17,9 @@
             @endforeach
         </x-ui.select>
 
-        <label class="flex items-center gap-2 rounded-md bg-white px-3 py-2 text-sm ring-1 ring-inset ring-slate-300">
+        <label class="flex items-center gap-2 rounded-md bg-surface px-3 py-2 text-sm ring-1 ring-inset ring-line">
             <input type="checkbox" wire:model.live="overdueOnly"
-                   class="rounded border-slate-300 text-slate-900 focus:ring-slate-900">
+                   class="rounded border-line text-ink focus:ring-gold">
             Overdue only
         </label>
 
@@ -30,7 +30,7 @@
         @forelse ($assignments as $assignment)
             @php $overdue = $assignment->isReleased() && $assignment->due_at?->isPast(); @endphp
 
-            <tr wire:key="assignment-{{ $assignment->id }}" class="hover:bg-slate-50">
+            <tr wire:key="assignment-{{ $assignment->id }}" class="hover:bg-elevated">
                 <x-ui.td class="font-medium">{{ $assignment->title }}</x-ui.td>
                 <x-ui.td muted>
                     {{ $assignment->sessionInstance?->sessionTemplate?->sequence
@@ -39,7 +39,7 @@
                 </x-ui.td>
                 <x-ui.td muted>{{ $assignment->sessionInstance?->batch?->code }}</x-ui.td>
                 <x-ui.td>
-                    <span class="{{ $overdue ? 'font-medium text-rose-700' : 'text-slate-600' }}">
+                    <span class="{{ $overdue ? 'font-medium text-danger' : 'text-ink-2' }}">
                         {{ $assignment->due_at?->format('d M Y') ?? '—' }}
                     </span>
                 </x-ui.td>
@@ -53,9 +53,9 @@
                 <x-ui.td muted class="tabular-nums">{{ $assignment->submitted_count }}</x-ui.td>
                 <x-ui.td class="tabular-nums">
                     @if ($assignment->awaiting_review_count > 0)
-                        <span class="font-medium text-amber-700">{{ $assignment->awaiting_review_count }}</span>
+                        <span class="font-medium text-warning">{{ $assignment->awaiting_review_count }}</span>
                     @else
-                        <span class="text-slate-400">0</span>
+                        <span class="text-ink-3">0</span>
                     @endif
                 </x-ui.td>
                 <x-ui.td align="right">

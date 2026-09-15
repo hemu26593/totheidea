@@ -3,13 +3,16 @@
 ])
 
 @php
+    // A wash behind the label rather than a solid block: on a dark surface a
+    // filled badge shouts, and most of these are read in bulk down a table.
+    // Each tone stays semantic - only 'accent' is the brand.
     $classes = match ($tone) {
-        'success' => 'bg-emerald-50 text-emerald-700 ring-emerald-200',
-        'warning' => 'bg-amber-50 text-amber-800 ring-amber-200',
-        'danger' => 'bg-rose-50 text-rose-700 ring-rose-200',
-        'info' => 'bg-sky-50 text-sky-700 ring-sky-200',
-        'accent' => 'bg-violet-50 text-violet-700 ring-violet-200',
-        default => 'bg-slate-100 text-slate-600 ring-slate-200',
+        'success' => 'bg-success-wash text-success ring-success-line',
+        'warning' => 'bg-warning-wash text-warning ring-warning-line',
+        'danger' => 'bg-danger-wash text-danger ring-danger-line',
+        'info' => 'bg-info-wash text-info ring-info-line',
+        'accent' => 'bg-gold-wash-strong text-gold ring-gold-line',
+        default => 'bg-elevated text-ink-2 ring-line',
     };
 @endphp
 

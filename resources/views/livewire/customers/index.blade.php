@@ -27,9 +27,9 @@
 
     <x-ui.table :headings="['Customer', 'Code', 'Status', 'Primary contact', 'Enrolments', '>Actions']">
         @forelse ($customers as $customer)
-            <tr wire:key="customer-{{ $customer->id }}" class="hover:bg-slate-50">
+            <tr wire:key="customer-{{ $customer->id }}" class="hover:bg-elevated">
                 <x-ui.td>
-                    <a href="{{ route('customers.show', $customer) }}" class="font-medium text-slate-900 hover:underline">
+                    <a href="{{ route('customers.show', $customer) }}" class="font-medium text-ink hover:underline">
                         {{ $customer->name }}
                     </a>
                 </x-ui.td>

@@ -63,37 +63,37 @@
 
                     <div class="grid gap-5 sm:grid-cols-2">
                         <div>
-                            <p class="mb-1.5 text-xs font-medium uppercase tracking-wide text-slate-500">Forms</p>
+                            <p class="mb-1.5 text-xs font-medium uppercase tracking-wide text-ink-3">Forms</p>
 
                             @forelse ($session->templateForms as $link)
-                                <div class="flex items-center justify-between border-b border-slate-100 py-1.5 last:border-0">
+                                <div class="flex items-center justify-between border-b border-line py-1.5 last:border-0">
                                     <span class="text-sm">{{ $link->formTemplate?->name }}</span>
                                     @if ($link->is_required)
                                         <x-ui.badge tone="warning">Required</x-ui.badge>
                                     @endif
                                 </div>
                             @empty
-                                <p class="text-xs text-slate-400">None attached.</p>
+                                <p class="text-xs text-ink-3">None attached.</p>
                             @endforelse
                         </div>
 
                         <div>
-                            <p class="mb-1.5 text-xs font-medium uppercase tracking-wide text-slate-500">Assignments</p>
+                            <p class="mb-1.5 text-xs font-medium uppercase tracking-wide text-ink-3">Assignments</p>
 
                             @forelse ($session->assignmentTemplates as $assignment)
-                                <div class="border-b border-slate-100 py-1.5 last:border-0">
+                                <div class="border-b border-line py-1.5 last:border-0">
                                     <p class="text-sm">{{ $assignment->title }}</p>
                                 </div>
                             @empty
-                                <p class="text-xs text-slate-400">None defined.</p>
+                                <p class="text-xs text-ink-3">None defined.</p>
                             @endforelse
                         </div>
                     </div>
 
                     @if ($session->objectives)
-                        <div class="mt-4 border-t border-slate-100 pt-3">
-                            <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Objectives</p>
-                            <p class="mt-1 whitespace-pre-line text-sm text-slate-700">{{ $session->objectives }}</p>
+                        <div class="mt-4 border-t border-line pt-3">
+                            <p class="text-xs font-medium uppercase tracking-wide text-ink-3">Objectives</p>
+                            <p class="mt-1 whitespace-pre-line text-sm text-ink-2">{{ $session->objectives }}</p>
                         </div>
                     @endif
                 </x-ui.card>
@@ -149,9 +149,9 @@
                 </x-ui.select>
             </x-ui.field>
 
-            <label class="flex items-center gap-2 text-sm text-slate-700">
+            <label class="flex items-center gap-2 text-sm text-ink-2">
                 <input type="checkbox" wire:model="formRequired"
-                       class="rounded border-slate-300 text-slate-900 focus:ring-slate-900">
+                       class="rounded border-line text-ink focus:ring-gold">
                 Required at this session
             </label>
 
@@ -173,7 +173,7 @@
                 <x-ui.textarea wire:model="assignmentInstructions" rows="5" />
             </x-ui.field>
 
-            <p class="text-xs text-slate-500">
+            <p class="text-xs text-ink-3">
                 A template carries no due date. Only a released instance has one, set when the assignment
                 is actually staged at a session.
             </p>

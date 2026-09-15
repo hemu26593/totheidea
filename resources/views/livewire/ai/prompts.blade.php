@@ -37,14 +37,14 @@
                                         </x-ui.button>
                                     @endcan
                                 @else
-                                    <span class="text-xs text-slate-400">Immutable</span>
+                                    <span class="text-xs text-ink-3">Immutable</span>
                                 @endif
                             </x-ui.td>
                         </tr>
 
-                        <tr class="bg-slate-50/60" wire:key="prompt-body-{{ $prompt->id }}">
+                        <tr class="bg-elevated/60" wire:key="prompt-body-{{ $prompt->id }}">
                             <td colspan="6" class="px-4 py-2">
-                                <pre class="max-h-40 overflow-auto whitespace-pre-wrap text-xs leading-relaxed text-slate-600">{{ $prompt->template }}</pre>
+                                <pre class="max-h-40 overflow-auto whitespace-pre-wrap text-xs leading-relaxed text-ink-2">{{ $prompt->template }}</pre>
                             </td>
                         </tr>
                     @endforeach

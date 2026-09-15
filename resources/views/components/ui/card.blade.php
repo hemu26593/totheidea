@@ -11,16 +11,16 @@
     scrolling within its own overflow container. Without this the page scrolls
     sideways on mobile and content is clipped off the right edge.
 --}}
-<section {{ $attributes->merge(['class' => 'min-w-0 rounded-lg bg-white shadow-sm ring-1 ring-slate-200']) }}>
+<section {{ $attributes->merge(['class' => 'min-w-0 rounded-lg bg-surface ring-1 ring-line']) }}>
     @if ($title || isset($actions))
-        <header class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3">
+        <header class="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3">
             <div class="min-w-0">
                 @if ($title)
-                    <h2 class="text-sm font-semibold text-slate-900">{{ $title }}</h2>
+                    <h2 class="text-sm font-semibold text-ink">{{ $title }}</h2>
                 @endif
 
                 @if ($subtitle)
-                    <p class="mt-0.5 text-xs text-slate-500">{{ $subtitle }}</p>
+                    <p class="mt-0.5 text-xs text-ink-3">{{ $subtitle }}</p>
                 @endif
             </div>
 

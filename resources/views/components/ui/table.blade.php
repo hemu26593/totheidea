@@ -4,10 +4,10 @@
 
 {{-- min-w-0: see the note on ui.card. The scroll container must be allowed
      to be narrower than the table it holds. --}}
-<div {{ $attributes->merge(['class' => 'min-w-0 overflow-x-auto rounded-lg bg-white shadow-sm ring-1 ring-slate-200']) }}>
-    <table class="min-w-full divide-y divide-slate-200 text-sm">
+<div {{ $attributes->merge(['class' => 'min-w-0 overflow-x-auto rounded-lg bg-surface ring-1 ring-line']) }}>
+    <table class="min-w-full divide-y divide-line text-sm">
         @if ($headings !== [])
-            <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+            <thead class="bg-raised text-left text-xs uppercase tracking-wide text-ink-3">
                 <tr>
                     @foreach ($headings as $heading)
                         <th scope="col" class="px-4 py-2.5 font-medium {{ str_starts_with((string) $heading, '>') ? 'text-right' : '' }}">
@@ -18,6 +18,6 @@
             </thead>
         @endif
 
-        <tbody class="divide-y divide-slate-100">{{ $slot }}</tbody>
+        <tbody class="divide-y divide-line">{{ $slot }}</tbody>
     </table>
 </div>

@@ -9,13 +9,13 @@
     </x-ui.alert>
 
     <x-ui.card title="Super Admin" class="mb-5">
-        <p class="text-sm text-slate-700">
+        <p class="text-sm text-ink-2">
             Super Admin holds no stored grants. It is granted by computation through
-            <code class="rounded bg-slate-100 px-1 py-0.5 text-xs">Gate::before</code>, so a permission
+            <code class="rounded bg-elevated px-1 py-0.5 text-xs">Gate::before</code>, so a permission
             added later is covered without a reseed.
         </p>
 
-        <p class="mt-3 text-sm text-slate-700">
+        <p class="mt-3 text-sm text-ink-2">
             These abilities are <strong>not</strong> auto-granted and fall through to their policies —
             they carry self-protection semantics that exist precisely to constrain a Super Admin:
         </p>
@@ -42,7 +42,7 @@
                                 @elseif (in_array($permission, $granted[$role->value] ?? [], true))
                                     <x-ui.badge tone="success">Granted</x-ui.badge>
                                 @else
-                                    <span class="text-xs text-slate-300">—</span>
+                                    <span class="text-xs text-ink-3">—</span>
                                 @endif
                             </x-ui.td>
                         @endforeach

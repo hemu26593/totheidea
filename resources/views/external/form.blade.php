@@ -14,26 +14,26 @@
 --}}
 <x-layouts.external :title="$template?->name ?? 'Form'">
     <div class="mb-5">
-        <h1 class="text-lg font-semibold tracking-tight">{{ $template?->name ?? 'Form' }}</h1>
+        <h1 class="text-lg font-semibold tracking-tight text-ink">{{ $template?->name ?? 'Form' }}</h1>
 
         @if ($businessName)
-            <p class="mt-1 text-sm text-slate-600">For {{ $businessName }}</p>
+            <p class="mt-1 text-sm text-ink-2">For {{ $businessName }}</p>
         @endif
 
         @if ($template?->description)
-            <p class="mt-2 text-sm text-slate-600">{{ $template->description }}</p>
+            <p class="mt-2 text-sm text-ink-2">{{ $template->description }}</p>
         @endif
     </div>
 
     @if (session('external.saved'))
-        <div class="mb-4 rounded-md bg-emerald-50 px-4 py-3 text-sm text-emerald-800 ring-1 ring-emerald-200">
+        <div class="mb-4 rounded-md bg-success-wash px-4 py-3 text-sm text-success ring-1 ring-inset ring-success-line">
             Your answers so far have been saved. You can close this page and come back to the same
             link to finish.
         </div>
     @endif
 
     @if ($missingRequired !== [])
-        <div class="mb-4 rounded-md bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-amber-200">
+        <div class="mb-4 rounded-md bg-warning-wash px-4 py-3 text-sm text-warning ring-1 ring-inset ring-warning-line">
             <p class="font-medium">Please answer these before submitting:</p>
             <ul class="mt-1 list-disc space-y-0.5 pl-5">
                 @foreach ($missingRequired as $label)
@@ -48,11 +48,11 @@
         @csrf
 
         @forelse ($sections as $section)
-            <section class="min-w-0 rounded-lg bg-white p-5 shadow-sm ring-1 ring-slate-200">
-                <h2 class="text-sm font-semibold text-slate-900">{{ $section->title }}</h2>
+            <section class="min-w-0 rounded-lg bg-surface p-5 ring-1 ring-line">
+                <h2 class="text-sm font-semibold text-ink">{{ $section->title }}</h2>
 
                 @if ($section->description)
-                    <p class="mt-1 text-sm text-slate-500">{{ $section->description }}</p>
+                    <p class="mt-1 text-sm text-ink-3">{{ $section->description }}</p>
                 @endif
 
                 <div class="mt-4 space-y-5">
@@ -63,42 +63,42 @@
                             $field = 'q-'.$question->id;
                         @endphp
 
-                        <div class="border-b border-slate-100 pb-4 last:border-0 last:pb-0">
-                            <label for="{{ $field }}" class="block text-sm font-medium text-slate-700">
+                        <div class="border-b border-line pb-4 last:border-0 last:pb-0">
+                            <label for="{{ $field }}" class="block text-sm font-medium text-ink-2">
                                 {{ $question->label }}
                                 @if ($question->is_required)
-                                    <span class="text-rose-600" aria-hidden="true">*</span>
+                                    <span class="text-danger" aria-hidden="true">*</span>
                                     <span class="sr-only">(required)</span>
                                 @endif
                             </label>
 
                             @if ($question->help_text)
-                                <p class="mt-0.5 text-xs text-slate-500">{{ $question->help_text }}</p>
+                                <p class="mt-0.5 text-xs text-ink-3">{{ $question->help_text }}</p>
                             @endif
 
                             <div class="mt-2">
                                 @switch ($question->type)
                                     @case (QuestionType::Textarea)
                                         <textarea id="{{ $field }}" name="answers[{{ $question->id }}]" rows="3"
-                                                  class="block w-full rounded-md border-0 px-3 py-1.5 text-sm text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-slate-900">{{ $value }}</textarea>
+                                                  class="block w-full rounded-md border-0 bg-raised px-3 py-1.5 text-sm text-ink shadow-sm ring-1 ring-inset ring-line placeholder:text-ink-3 focus:ring-2 focus:ring-inset focus:ring-gold">{{ $value }}</textarea>
                                         @break
 
                                     @case (QuestionType::Number)
                                     @case (QuestionType::Scale)
                                         <input id="{{ $field }}" type="number" step="any"
                                                name="answers[{{ $question->id }}]" value="{{ $value }}"
-                                               class="block w-full rounded-md border-0 px-3 py-1.5 text-sm text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-slate-900">
+                                               class="block w-full rounded-md border-0 bg-raised px-3 py-1.5 text-sm text-ink shadow-sm ring-1 ring-inset ring-line placeholder:text-ink-3 focus:ring-2 focus:ring-inset focus:ring-gold">
                                         @break
 
                                     @case (QuestionType::Date)
                                         <input id="{{ $field }}" type="date"
                                                name="answers[{{ $question->id }}]" value="{{ $value }}"
-                                               class="block w-full rounded-md border-0 px-3 py-1.5 text-sm text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-slate-900">
+                                               class="block w-full rounded-md border-0 bg-raised px-3 py-1.5 text-sm text-ink shadow-sm ring-1 ring-inset ring-line placeholder:text-ink-3 focus:ring-2 focus:ring-inset focus:ring-gold">
                                         @break
 
                                     @case (QuestionType::Boolean)
                                         <select id="{{ $field }}" name="answers[{{ $question->id }}]"
-                                                class="block w-full rounded-md border-0 px-3 py-1.5 text-sm text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-slate-900">
+                                                class="block w-full rounded-md border-0 bg-raised px-3 py-1.5 text-sm text-ink shadow-sm ring-1 ring-inset ring-line placeholder:text-ink-3 focus:ring-2 focus:ring-inset focus:ring-gold">
                                             <option value="">—</option>
                                             <option value="1" @selected($value === '1')>Yes</option>
                                             <option value="0" @selected($value === '0')>No</option>
@@ -108,15 +108,15 @@
                                     @case (QuestionType::SelectOne)
                                         <div class="space-y-1.5">
                                             @foreach ($question->options as $option)
-                                                <label class="flex items-start gap-2 text-sm text-slate-700">
+                                                <label class="flex items-start gap-2 text-sm text-ink-2">
                                                     <input type="radio" name="selections[{{ $question->id }}][]"
                                                            value="{{ $option->id }}"
                                                            @checked(in_array($option->id, $chosen, false))
-                                                           class="mt-0.5 border-slate-300 text-slate-900 focus:ring-slate-900">
+                                                           class="mt-0.5 border-line bg-raised text-gold focus:ring-gold">
                                                     <span>
                                                         {{ $option->label }}
                                                         @if ($option->label_secondary)
-                                                            <span class="text-slate-400">({{ $option->label_secondary }})</span>
+                                                            <span class="text-ink-3">({{ $option->label_secondary }})</span>
                                                         @endif
                                                     </span>
                                                 </label>
@@ -127,11 +127,11 @@
                                     @case (QuestionType::SelectMany)
                                         <div class="space-y-1.5">
                                             @foreach ($question->options as $option)
-                                                <label class="flex items-start gap-2 text-sm text-slate-700">
+                                                <label class="flex items-start gap-2 text-sm text-ink-2">
                                                     <input type="checkbox" name="selections[{{ $question->id }}][]"
                                                            value="{{ $option->id }}"
                                                            @checked(in_array($option->id, $chosen, false))
-                                                           class="mt-0.5 rounded border-slate-300 text-slate-900 focus:ring-slate-900">
+                                                           class="mt-0.5 rounded border-line bg-raised text-gold focus:ring-gold">
                                                     <span>{{ $option->label }}</span>
                                                 </label>
                                             @endforeach
@@ -141,7 +141,7 @@
                                     @default
                                         <input id="{{ $field }}" type="text"
                                                name="answers[{{ $question->id }}]" value="{{ $value }}"
-                                               class="block w-full rounded-md border-0 px-3 py-1.5 text-sm text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-slate-900">
+                                               class="block w-full rounded-md border-0 bg-raised px-3 py-1.5 text-sm text-ink shadow-sm ring-1 ring-inset ring-line placeholder:text-ink-3 focus:ring-2 focus:ring-inset focus:ring-gold">
                                 @endswitch
                             </div>
                         </div>
@@ -149,7 +149,7 @@
                 </div>
             </section>
         @empty
-            <section class="rounded-lg bg-white p-5 text-sm text-slate-500 shadow-sm ring-1 ring-slate-200">
+            <section class="rounded-lg bg-surface p-5 text-sm text-ink-3 ring-1 ring-line">
                 There are no questions to answer on this form.
             </section>
         @endforelse
@@ -175,17 +175,17 @@
 
         <div class="flex flex-wrap items-center justify-end gap-2">
             <button type="submit" value="save" data-action="save"
-                    class="rounded-md bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50">
+                    class="rounded-md bg-raised px-3 py-2 text-sm font-medium text-ink-2 ring-1 ring-inset ring-line transition hover:bg-elevated hover:text-ink">
                 Save and finish later
             </button>
 
             <button type="submit" name="action" value="submit" data-action="submit"
-                    class="rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-slate-800">
+                    class="rounded-md bg-gold px-3 py-2 text-sm font-medium text-canvas transition hover:bg-gold-bright">
                 Submit form
             </button>
         </div>
 
-        <p class="text-right text-xs text-slate-500" data-pending-note hidden>Sending…</p>
+        <p class="text-right text-xs text-ink-3" data-pending-note hidden>Sending…</p>
     </form>
 
     <script>

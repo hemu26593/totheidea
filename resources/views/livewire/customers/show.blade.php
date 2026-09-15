@@ -21,7 +21,7 @@
 
     <div class="grid gap-5 lg:grid-cols-3">
         <x-ui.card title="Overview" class="lg:col-span-1">
-            <dl class="divide-y divide-slate-100">
+            <dl class="divide-y divide-line">
                 <x-ui.definition term="Business">{{ $customer->name }}</x-ui.definition>
                 <x-ui.definition term="Code"><span class="font-mono">{{ $customer->code }}</span></x-ui.definition>
                 <x-ui.definition term="Status"><x-ui.status-badge :status="$customer->status" /></x-ui.definition>
@@ -35,7 +35,7 @@
                 @endif
             </dl>
 
-            <p class="mt-3 border-t border-slate-100 pt-3 text-xs text-slate-500">
+            <p class="mt-3 border-t border-line pt-3 text-xs text-ink-3">
                 A customer is a business, not an account. External participation happens through
                 scoped, expiring access links — never a login.
             </p>
@@ -133,9 +133,9 @@
                 </x-ui.field>
             </div>
 
-            <label class="flex items-center gap-2 text-sm text-slate-700">
+            <label class="flex items-center gap-2 text-sm text-ink-2">
                 <input type="checkbox" wire:model="contactPrimary"
-                       class="rounded border-slate-300 text-slate-900 focus:ring-slate-900">
+                       class="rounded border-line text-ink focus:ring-gold">
                 Make this the primary contact
             </label>
 
@@ -148,8 +148,8 @@
 
     {{-- Archive confirmation. There is no delete: removal is archival. --}}
     <x-ui.modal :show="$confirmingArchive" title="Archive customer" close="$set('confirmingArchive', false)">
-        <p class="text-sm text-slate-600">
-            Archiving hides <span class="font-medium text-slate-900">{{ $customer->name }}</span> from the
+        <p class="text-sm text-ink-2">
+            Archiving hides <span class="font-medium text-ink">{{ $customer->name }}</span> from the
             active directory. Nothing is deleted — sessions, submissions, attendance and reports all stay
             exactly as they are, and the record can be reactivated.
         </p>

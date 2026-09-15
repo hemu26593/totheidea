@@ -29,7 +29,7 @@
 
     <div class="mb-5 grid gap-5 lg:grid-cols-3">
         <x-ui.card title="Assignment">
-            <dl class="divide-y divide-slate-100">
+            <dl class="divide-y divide-line">
                 <x-ui.definition term="Batch">{{ $assignment->sessionInstance?->batch?->name }}</x-ui.definition>
                 <x-ui.definition term="Session">
                     Session {{ $assignment->sessionInstance?->sessionTemplate?->sequence }} —
@@ -49,7 +49,7 @@
 
         <x-ui.card title="Instructions" class="lg:col-span-2">
             @if ($assignment->instructions)
-                <p class="whitespace-pre-line text-sm text-slate-700">{{ $assignment->instructions }}</p>
+                <p class="whitespace-pre-line text-sm text-ink-2">{{ $assignment->instructions }}</p>
             @else
                 <x-ui.empty title="No instructions recorded" />
             @endif
@@ -92,28 +92,28 @@
                                              wire:click="startReview({{ $submission->id }})">Review</x-ui.button>
                             @endcan
                         @elseif ($submission)
-                            <span class="text-xs text-slate-400">Nothing to review</span>
+                            <span class="text-xs text-ink-3">Nothing to review</span>
                         @else
-                            <span class="text-xs text-slate-400">No submission</span>
+                            <span class="text-xs text-ink-3">No submission</span>
                         @endif
                     </x-ui.td>
                 </tr>
 
                 @if ($submission && $submission->reviews->isNotEmpty())
-                    <tr class="bg-slate-50/60" wire:key="history-{{ $enrollment->id }}">
+                    <tr class="bg-elevated/60" wire:key="history-{{ $enrollment->id }}">
                         <td colspan="6" class="px-4 py-2">
-                            <p class="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">
+                            <p class="mb-1 text-xs font-medium uppercase tracking-wide text-ink-3">
                                 Review history — appended, never edited
                             </p>
 
                             <ul class="space-y-1">
                                 @foreach ($submission->reviews->sortByDesc('reviewed_at') as $review)
-                                    <li class="flex flex-wrap items-baseline gap-2 text-xs text-slate-600">
+                                    <li class="flex flex-wrap items-baseline gap-2 text-xs text-ink-2">
                                         <x-ui.status-badge :status="$review->decision" />
                                         <span>{{ $review->reviewedBy?->name }}</span>
-                                        <span class="text-slate-400">{{ $review->reviewed_at?->format('d M Y H:i') }}</span>
+                                        <span class="text-ink-3">{{ $review->reviewed_at?->format('d M Y H:i') }}</span>
                                         @if ($review->remark)
-                                            <span class="text-slate-700">— {{ $review->remark }}</span>
+                                            <span class="text-ink-2">— {{ $review->remark }}</span>
                                         @endif
                                     </li>
                                 @endforeach
@@ -130,13 +130,13 @@
     <x-ui.modal :show="$reviewingSubmissionId !== null" title="Review submission"
                 close="$set('reviewingSubmissionId', null)">
         @if ($reviewing)
-            <p class="mb-3 text-sm text-slate-600">
-                <span class="font-medium text-slate-900">{{ $reviewing->enrollment?->customer?->name }}</span>,
+            <p class="mb-3 text-sm text-ink-2">
+                <span class="font-medium text-ink">{{ $reviewing->enrollment?->customer?->name }}</span>,
                 attempt {{ $reviewing->attempt_number }}.
             </p>
 
             @if ($reviewing->body)
-                <div class="mb-4 max-h-52 overflow-y-auto rounded-md bg-slate-50 p-3 text-sm whitespace-pre-line ring-1 ring-inset ring-slate-200">
+                <div class="mb-4 max-h-52 overflow-y-auto rounded-md bg-raised p-3 text-sm whitespace-pre-line ring-1 ring-inset ring-line">
                     {{ $reviewing->body }}
                 </div>
             @endif
@@ -146,7 +146,7 @@
             <x-ui.textarea wire:model="reviewRemark" rows="3" />
         </x-ui.field>
 
-        <p class="mt-3 text-xs text-slate-500">
+        <p class="mt-3 text-xs text-ink-3">
             A review is appended to the history. Returning for rework lets the participant submit again;
             the earlier attempt stays on the record.
         </p>

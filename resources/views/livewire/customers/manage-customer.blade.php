@@ -36,7 +36,7 @@
         </form>
     </x-ui.card>
 
-    <p class="mt-4 max-w-xl text-xs text-slate-500">
+    <p class="mt-4 max-w-xl text-xs text-ink-3">
         Status changes are not made here. A customer becomes active or archived through the domain
         service, which records who did it and when.
     </p>

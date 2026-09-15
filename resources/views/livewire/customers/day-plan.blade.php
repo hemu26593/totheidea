@@ -32,7 +32,7 @@
     @else
         <x-ui.table :headings="['Time', 'Task', 'G', 'C', 'M', 'Status', 'Source', '>Actions']">
             @forelse ($items as $item)
-                <tr wire:key="day-item-{{ $item->id }}" class="hover:bg-slate-50">
+                <tr wire:key="day-item-{{ $item->id }}" class="hover:bg-elevated">
                     <x-ui.td muted class="whitespace-nowrap tabular-nums">
                         @if ($item->planned_start)
                             {{ substr((string) $item->planned_start, 0, 5) }}@if ($item->planned_end)–{{ substr((string) $item->planned_end, 0, 5) }}@endif
@@ -42,7 +42,7 @@
                     </x-ui.td>
 
                     <x-ui.td>
-                        <span class="{{ $item->isDone() ? 'text-slate-400 line-through' : 'font-medium' }}">
+                        <span class="{{ $item->isDone() ? 'text-ink-3 line-through' : 'font-medium' }}">
                             {{ $item->task }}
                         </span>
                     </x-ui.td>
@@ -87,7 +87,7 @@
             @endforelse
         </x-ui.table>
 
-        <p class="mt-4 text-xs text-slate-500">
+        <p class="mt-4 text-xs text-ink-3">
             Unfinished tasks carry forward automatically through the domain's scheduled job. This screen
             shows where a task came from and how far it has slipped; it never creates a carried item itself.
         </p>
@@ -123,7 +123,7 @@
                 </x-ui.field>
             </div>
 
-            <p class="text-xs text-slate-500">
+            <p class="text-xs text-ink-3">
                 G, C and M are the worksheet's own column names, kept exactly as the client wrote them.
                 What they stand for is not yet defined, so nothing is assumed about them here.
             </p>

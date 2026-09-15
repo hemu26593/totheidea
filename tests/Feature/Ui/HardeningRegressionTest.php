@@ -302,11 +302,28 @@ class HardeningRegressionTest extends TestCase
         // A submitted form is read-only, and its inputs were correctly
         // disabled - but rendered identically to editable ones, which invites
         // somebody to try typing into a record they cannot change.
+        // Asserted as intent rather than as one palette's literal: the
+        // control must carry a disabled background, and it must differ from
+        // the editable one. A re-theme changes the colours, not the rule.
         foreach (['input', 'select', 'textarea'] as $component) {
+            $markup = file_get_contents(resource_path("views/components/ui/{$component}.blade.php"));
+
+            preg_match('/(?<!:)\\bbg-([\\w.\\/-]+)/', $markup, $base);
+            preg_match('/\\bdisabled:bg-([\\w.\\/-]+)/', $markup, $disabled);
+
+            $this->assertNotEmpty($base, "ui.{$component} must declare a background.");
+            $this->assertNotEmpty($disabled, "ui.{$component} must show a disabled control as disabled.");
+
+            $this->assertNotSame(
+                $base[1],
+                $disabled[1],
+                "ui.{$component} renders a disabled control identically to an editable one.",
+            );
+
             $this->assertStringContainsString(
-                'disabled:bg-slate-100',
-                file_get_contents(resource_path("views/components/ui/{$component}.blade.php")),
-                "ui.{$component} must show a disabled control as disabled.",
+                'disabled:cursor-not-allowed',
+                $markup,
+                "ui.{$component} must show a disabled cursor.",
             );
         }
     }

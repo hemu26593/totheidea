@@ -37,7 +37,7 @@
 
     <x-ui.table :headings="['Participant', 'Session', 'Batch', 'Status', 'Marked', 'By', '>']">
         @forelse ($marks as $mark)
-            <tr wire:key="mark-{{ $mark->id }}" class="hover:bg-slate-50">
+            <tr wire:key="mark-{{ $mark->id }}" class="hover:bg-elevated">
                 <x-ui.td class="font-medium">{{ $mark->enrollment?->customer?->name }}</x-ui.td>
                 <x-ui.td muted>
                     Session {{ $mark->sessionInstance?->sessionTemplate?->sequence }} —

@@ -6,12 +6,12 @@
     says so and stops.
 --}}
 <x-layouts.external title="Form submitted">
-    <div class="rounded-lg bg-white p-6 text-center shadow-sm ring-1 ring-slate-200">
-        <div class="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200">
+    <div class="rounded-lg bg-surface p-6 text-center ring-1 ring-line">
+        <div class="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-success-wash text-success ring-1 ring-success-line">
             <span aria-hidden="true" class="text-lg leading-none">&check;</span>
         </div>
 
-        <h1 class="mt-3 text-lg font-semibold tracking-tight">Thank you — your form has been submitted</h1>
+        <h1 class="mt-3 text-lg font-semibold tracking-tight text-ink">Thank you — your form has been submitted</h1>
 
         @php
             // Assembled in PHP rather than with inline directives: Blade only
@@ -22,15 +22,15 @@
             $when = $submittedAt ? ' on '.$submittedAt->format('d M Y').' at '.$submittedAt->format('H:i') : '';
         @endphp
 
-        <p class="mt-2 text-sm text-slate-600">
+        <p class="mt-2 text-sm text-ink-2">
             {{ $what.$whose.' was received'.$when.'.' }}
         </p>
 
-        <p class="mt-4 text-sm text-slate-500">
+        <p class="mt-4 text-sm text-ink-3">
             Your programme team can see your answers now. There is nothing else you need to do.
         </p>
 
-        <p class="mt-4 border-t border-slate-100 pt-4 text-xs text-slate-500">
+        <p class="mt-4 border-t border-line pt-4 text-xs text-ink-3">
             This link has now been used and will not open the form again. If you need to change an
             answer, please contact your programme team.
         </p>

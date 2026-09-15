@@ -37,42 +37,42 @@
                         @endcan
                     </x-slot:actions>
 
-                    <div class="divide-y divide-slate-100">
+                    <div class="divide-y divide-line">
                         @forelse ($entries as $entry)
                             <div class="px-4 py-2.5" wire:key="entry-{{ $entry->id }}">
                                 <div class="flex items-start justify-between gap-2">
-                                    <p class="text-sm font-medium text-slate-800">{{ $entry->activity }}</p>
+                                    <p class="text-sm font-medium text-ink-2">{{ $entry->activity }}</p>
 
                                     @can('update', $entry)
                                         <button type="button" wire:click="startEditing({{ $entry->id }})"
-                                                class="shrink-0 text-xs text-slate-500 hover:text-slate-900">Edit</button>
+                                                class="shrink-0 text-xs text-ink-3 hover:text-gold">Edit</button>
                                     @endcan
                                 </div>
 
                                 <dl class="mt-1 flex gap-4 text-xs">
                                     <div>
-                                        <dt class="text-slate-500">Planned</dt>
-                                        <dd class="font-medium tabular-nums text-slate-800">
+                                        <dt class="text-ink-3">Planned</dt>
+                                        <dd class="font-medium tabular-nums text-ink-2">
                                             {{ $entry->planned_hours !== null ? rtrim(rtrim((string) $entry->planned_hours, '0'), '.').' h' : '—' }}
                                         </dd>
                                     </div>
                                     <div>
-                                        <dt class="text-slate-500">Actual</dt>
-                                        <dd class="font-medium tabular-nums text-slate-800">
+                                        <dt class="text-ink-3">Actual</dt>
+                                        <dd class="font-medium tabular-nums text-ink-2">
                                             {{ $entry->actual_hours !== null ? rtrim(rtrim((string) $entry->actual_hours, '0'), '.').' h' : '—' }}
                                         </dd>
                                     </div>
                                 </dl>
                             </div>
                         @empty
-                            <p class="px-4 py-6 text-center text-xs text-slate-500">Nothing allocated.</p>
+                            <p class="px-4 py-6 text-center text-xs text-ink-3">Nothing allocated.</p>
                         @endforelse
                     </div>
                 </x-ui.card>
             @endforeach
         </div>
 
-        <p class="mt-4 text-xs text-slate-500">
+        <p class="mt-4 text-xs text-ink-3">
             Planned and actual hours are shown side by side. No adherence rating or percentage is
             computed — none has been defined, and a variance the reader can see is more useful than a
             score nobody agreed.

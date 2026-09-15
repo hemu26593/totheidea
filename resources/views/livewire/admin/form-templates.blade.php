@@ -13,20 +13,20 @@
 
     <div class="grid gap-5 lg:grid-cols-4">
         <x-ui.card title="Templates" class="lg:col-span-1" :padding="false">
-            <div class="divide-y divide-slate-100">
+            <div class="divide-y divide-line">
                 @forelse ($templates as $item)
                     <a href="{{ route('admin.form-templates', ['templateId' => $item->id]) }}"
                        wire:key="template-{{ $item->id }}"
-                       class="block px-4 py-2.5 transition hover:bg-slate-50 {{ $template?->id === $item->id ? 'bg-slate-50' : '' }}">
-                        <p class="text-sm font-medium text-slate-900">{{ $item->name }}</p>
-                        <p class="text-xs text-slate-500">
+                       class="block px-4 py-2.5 transition hover:bg-elevated {{ $template?->id === $item->id ? 'bg-raised' : '' }}">
+                        <p class="text-sm font-medium text-ink">{{ $item->name }}</p>
+                        <p class="text-xs text-ink-3">
                             <span class="font-mono">{{ $item->key }}</span>
                             · {{ $item->versions_count }} version(s)
                             @if ($item->is_scored) · scored @endif
                         </p>
                     </a>
                 @empty
-                    <p class="px-4 py-6 text-center text-xs text-slate-500">No templates yet.</p>
+                    <p class="px-4 py-6 text-center text-xs text-ink-3">No templates yet.</p>
                 @endforelse
             </div>
         </x-ui.card>
@@ -94,8 +94,8 @@
 
                         <div class="space-y-4">
                             @forelse ($sections as $section)
-                                <div class="rounded-md ring-1 ring-slate-200" wire:key="section-{{ $section->id }}">
-                                    <div class="flex items-center justify-between border-b border-slate-200 px-3 py-2">
+                                <div class="rounded-md ring-1 ring-line" wire:key="section-{{ $section->id }}">
+                                    <div class="flex items-center justify-between border-b border-line px-3 py-2">
                                         <p class="text-sm font-medium">{{ $section->title }}</p>
 
                                         @if ($version->isDraft())
@@ -106,19 +106,19 @@
                                         @endif
                                     </div>
 
-                                    <ul class="divide-y divide-slate-100">
+                                    <ul class="divide-y divide-line">
                                         @forelse ($section->questions as $question)
                                             <li class="flex items-start justify-between gap-3 px-3 py-2">
-                                                <span class="text-sm text-slate-800">
+                                                <span class="text-sm text-ink-2">
                                                     {{ $question->label }}
                                                     @if ($question->is_required)
-                                                        <span class="text-rose-600">*</span>
+                                                        <span class="text-danger">*</span>
                                                     @endif
                                                 </span>
                                                 <x-ui.badge>{{ $question->type->value }}</x-ui.badge>
                                             </li>
                                         @empty
-                                            <li class="px-3 py-3 text-xs text-slate-400">No questions in this section.</li>
+                                            <li class="px-3 py-3 text-xs text-ink-3">No questions in this section.</li>
                                         @endforelse
                                     </ul>
                                 </div>
@@ -128,7 +128,7 @@
                             @endforelse
                         </div>
 
-                        <p class="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-500">
+                        <p class="mt-4 border-t border-line pt-3 text-xs text-ink-3">
                             Choice questions get the Average / Good / Better / Best set with no numeric score —
                             that mapping is an open client decision and is not invented here.
                         </p>
@@ -150,12 +150,12 @@
                 </x-ui.field>
             </div>
 
-            <label class="flex items-start gap-2 text-sm text-slate-700">
+            <label class="flex items-start gap-2 text-sm text-ink-2">
                 <input type="checkbox" wire:model="isScored"
-                       class="mt-0.5 rounded border-slate-300 text-slate-900 focus:ring-slate-900">
+                       class="mt-0.5 rounded border-line text-ink focus:ring-gold">
                 <span>
                     Scored instrument
-                    <span class="block text-xs text-slate-500">
+                    <span class="block text-xs text-ink-3">
                         Scoring is an explicit act with a recorded scheme version, never a side effect of
                         submitting.
                     </span>
@@ -196,9 +196,9 @@
                 </x-ui.select>
             </x-ui.field>
 
-            <label class="flex items-center gap-2 text-sm text-slate-700">
+            <label class="flex items-center gap-2 text-sm text-ink-2">
                 <input type="checkbox" wire:model="questionRequired"
-                       class="rounded border-slate-300 text-slate-900 focus:ring-slate-900">
+                       class="rounded border-line text-ink focus:ring-gold">
                 Required
             </label>
 
