@@ -28,7 +28,7 @@
 
     <div class="mb-5 grid gap-5 lg:grid-cols-3">
         <x-ui.card title="Session information">
-            <dl class="divide-y divide-slate-100">
+            <dl class="divide-y divide-line">
                 <x-ui.definition term="Batch">{{ $session->batch?->name }}</x-ui.definition>
                 <x-ui.definition term="Programme">{{ $session->batch?->program?->name }}</x-ui.definition>
                 <x-ui.definition term="Planned date">{{ $session->planned_date?->format('d M Y') }}</x-ui.definition>
@@ -38,9 +38,9 @@
             </dl>
 
             @if ($session->sessionTemplate?->objectives)
-                <div class="mt-3 border-t border-slate-100 pt-3">
-                    <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Objectives</p>
-                    <p class="mt-1 whitespace-pre-line text-sm text-slate-700">{{ $session->sessionTemplate->objectives }}</p>
+                <div class="mt-3 border-t border-line pt-3">
+                    <p class="text-xs font-medium uppercase tracking-wide text-ink-3">Objectives</p>
+                    <p class="mt-1 whitespace-pre-line text-sm text-ink-2">{{ $session->sessionTemplate->objectives }}</p>
                 </div>
             @endif
         </x-ui.card>
@@ -49,8 +49,8 @@
                    subtitle="Counts of what was recorded — not a percentage.">
             <div class="grid grid-cols-2 gap-3">
                 @foreach ($statuses as $status)
-                    <div class="rounded-md bg-slate-50 px-3 py-2 ring-1 ring-inset ring-slate-200">
-                        <p class="text-xs text-slate-500">{{ Str::headline($status) }}</p>
+                    <div class="rounded-md bg-raised px-3 py-2 ring-1 ring-inset ring-line">
+                        <p class="text-xs text-ink-3">{{ Str::headline($status) }}</p>
                         <p class="text-xl font-semibold tabular-nums">{{ $statusCounts[$status] ?? 0 }}</p>
                     </div>
                 @endforeach
@@ -64,11 +64,11 @@
 
         <x-ui.card title="Session forms" subtitle="Instruments attached to this session in the curriculum.">
             @forelse ($sessionForms as $link)
-                <div class="flex items-center justify-between border-b border-slate-100 py-2 last:border-0"
+                <div class="flex items-center justify-between border-b border-line py-2 last:border-0"
                      wire:key="form-link-{{ $link->id }}">
                     <div>
                         <p class="text-sm font-medium">{{ $link->formTemplate?->name }}</p>
-                        <p class="text-xs text-slate-500">{{ $link->formTemplate?->key }}</p>
+                        <p class="text-xs text-ink-3">{{ $link->formTemplate?->key }}</p>
                     </div>
 
                     @if ($link->is_required)
@@ -97,10 +97,10 @@
                         @if ($mark)
                             <x-ui.status-badge :status="$mark->status" />
                             @if ($mark->amended_at)
-                                <span class="ml-1 text-xs text-slate-400">amended</span>
+                                <span class="ml-1 text-xs text-ink-3">amended</span>
                             @endif
                         @else
-                            <span class="text-slate-400">Not marked</span>
+                            <span class="text-ink-3">Not marked</span>
                         @endif
                     </x-ui.td>
                     <x-ui.td align="right">
@@ -116,7 +116,7 @@
                                     @endforeach
                                 </div>
                             @else
-                                <span class="text-xs text-slate-400">Start the session first</span>
+                                <span class="text-xs text-ink-3">Start the session first</span>
                             @endif
                         @endcan
                     </x-ui.td>
@@ -182,7 +182,7 @@
                 <x-ui.input type="date" wire:model="assignmentDueAt" />
             </x-ui.field>
 
-            <p class="text-xs text-slate-500">
+            <p class="text-xs text-ink-3">
                 Staging creates a draft. Participants see nothing until it is released, and the
                 overdue reminders only start counting from release.
             </p>

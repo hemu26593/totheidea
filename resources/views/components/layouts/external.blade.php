@@ -19,12 +19,12 @@
     <title>{{ $title ?? 'Form' }} — {{ config('app.name') }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="h-full bg-slate-100 text-slate-900 antialiased">
+<body class="h-full bg-canvas text-ink antialiased">
     <div class="flex min-h-full flex-col">
-        <header class="border-b border-slate-200 bg-white">
+        <header class="border-b border-line bg-sidebar">
             <div class="mx-auto w-full max-w-3xl px-4 py-4 sm:px-6">
-                <p class="text-sm font-semibold tracking-tight">{{ config('app.name') }}</p>
-                <p class="mt-0.5 text-xs text-slate-500">Business Mastery Programme</p>
+                <p class="text-sm font-semibold tracking-tight text-gold">{{ config('app.name') }}</p>
+                <p class="mt-0.5 text-[11px] uppercase tracking-[0.18em] text-ink-3">Business Mastery Programme</p>
             </div>
         </header>
 
@@ -32,8 +32,8 @@
             {{ $slot }}
         </main>
 
-        <footer class="border-t border-slate-200 bg-white">
-            <div class="mx-auto w-full max-w-3xl px-4 py-4 text-xs text-slate-500 sm:px-6">
+        <footer class="border-t border-line bg-sidebar">
+            <div class="mx-auto w-full max-w-3xl px-4 py-4 text-xs text-ink-3 sm:px-6">
                 This link was sent to you by your programme team. It opens this form only, and
                 it expires. Please do not forward it.
             </div>

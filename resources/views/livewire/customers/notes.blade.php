@@ -15,9 +15,9 @@
             <x-ui.card wire:key="note-{{ $note->id }}">
                 <div class="flex flex-wrap items-start justify-between gap-3">
                     <div class="min-w-0 flex-1">
-                        <p class="whitespace-pre-line text-sm text-slate-800">{{ $note->body }}</p>
+                        <p class="whitespace-pre-line text-sm text-ink-2">{{ $note->body }}</p>
 
-                        <p class="mt-2 text-xs text-slate-500">
+                        <p class="mt-2 text-xs text-ink-3">
                             {{ $note->author?->name }} · {{ $note->created_at?->format('d M Y H:i') }}
                         </p>
                     </div>
@@ -60,12 +60,12 @@
             </x-ui.field>
 
             @unless ($editingId)
-                <label class="flex items-start gap-2 text-sm text-slate-700">
+                <label class="flex items-start gap-2 text-sm text-ink-2">
                     <input type="checkbox" wire:model="internal"
-                           class="mt-0.5 rounded border-slate-300 text-slate-900 focus:ring-slate-900">
+                           class="mt-0.5 rounded border-line text-ink focus:ring-gold">
                     <span>
                         Internal only
-                        <span class="block text-xs text-slate-500">
+                        <span class="block text-xs text-ink-3">
                             The default. Participants never see an internal note.
                         </span>
                     </span>

@@ -35,14 +35,14 @@
                         && $grant->use_count < $grant->max_uses;
                 @endphp
 
-                <tr wire:key="sendable-{{ $row->enrollment->id }}-{{ $row->template->id }}" class="hover:bg-slate-50">
+                <tr wire:key="sendable-{{ $row->enrollment->id }}-{{ $row->template->id }}" class="hover:bg-elevated">
                     <x-ui.td class="font-medium">{{ $row->template->name }}</x-ui.td>
                     <x-ui.td muted>v{{ $row->version?->version_number }}</x-ui.td>
                     <x-ui.td muted>{{ $row->enrollment->batch?->code }}</x-ui.td>
 
                     <x-ui.td>
                         @if (! $grant)
-                            <span class="text-slate-400">Not sent</span>
+                            <span class="text-ink-3">Not sent</span>
                         @else
                             @if ($grant->revoked_at)
                                 <x-ui.badge tone="danger">Withdrawn</x-ui.badge>
@@ -54,7 +54,7 @@
                                 <x-ui.badge tone="success">Active</x-ui.badge>
                             @endif
 
-                            <div class="mt-1 text-xs text-slate-500">
+                            <div class="mt-1 text-xs text-ink-3">
                                 <div class="truncate">Sent to {{ $grant->customerContact?->email ?? '—' }}</div>
                                 <div>
                                     {{ $grant->issued_at?->format('d M Y H:i') }}
@@ -109,7 +109,7 @@
 
     <x-ui.table :headings="['Form', 'Version', 'Batch', 'Status', 'Submitted', 'Scores', '>']">
         @forelse ($submissions as $submission)
-            <tr wire:key="submission-{{ $submission->id }}" class="hover:bg-slate-50">
+            <tr wire:key="submission-{{ $submission->id }}" class="hover:bg-elevated">
                 <x-ui.td class="font-medium">{{ $submission->formVersion?->formTemplate?->name }}</x-ui.td>
                 <x-ui.td muted>v{{ $submission->formVersion?->version_number }}</x-ui.td>
                 <x-ui.td muted>{{ $submission->enrollment?->batch?->code }}</x-ui.td>
@@ -156,7 +156,7 @@
 
             @if ($enrollments->isEmpty())
                 <x-ui.alert tone="warning">
-                    This business is not enrolled in a batch yet. A submission binds to an enrolment.
+                    This business is not assigned to a batch yet. Assign one and its forms appear here.
                 </x-ui.alert>
             @elseif ($templates->isEmpty())
                 <x-ui.alert tone="warning">

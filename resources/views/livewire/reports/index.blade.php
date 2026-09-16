@@ -33,12 +33,12 @@
             </x-ui.field>
         </div>
 
-        <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
+        <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-4">
             @can('export', App\Models\ReportArtifact::class)
                 <x-ui.button variant="primary" wire:click="export('pdf')" :disabled="! $subjectId">Export PDF</x-ui.button>
                 <x-ui.button wire:click="export('csv')" :disabled="! $subjectId">Export CSV</x-ui.button>
             @else
-                <p class="text-xs text-slate-500">
+                <p class="text-xs text-ink-3">
                     You can preview reports but not export them — writing a file that leaves the system is a
                     separate permission.
                 </p>
@@ -52,13 +52,13 @@
         <x-ui.card :title="$preview->title" subtitle="Preview — computed, not stored." class="mb-5">
             @foreach ($preview->sections as $section)
                 <div class="mb-5 last:mb-0" wire:key="preview-section-{{ $loop->index }}">
-                    <h3 class="mb-2 text-sm font-semibold text-slate-900">{{ $section->heading }}</h3>
+                    <h3 class="mb-2 text-sm font-semibold text-ink">{{ $section->heading }}</h3>
 
                     @if ($section->rows !== [])
                         <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-slate-200 text-sm">
+                            <table class="min-w-full divide-y divide-line text-sm">
                                 @if ($section->columns !== [])
-                                    <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                                    <thead class="bg-raised text-left text-xs uppercase tracking-wide text-ink-3">
                                         <tr>
                                             @foreach ($section->columns as $column)
                                                 <th class="px-3 py-2 font-medium">{{ $column }}</th>
@@ -67,11 +67,11 @@
                                     </thead>
                                 @endif
 
-                                <tbody class="divide-y divide-slate-100">
+                                <tbody class="divide-y divide-line">
                                     @foreach ($section->rows as $row)
                                         <tr>
                                             @foreach ($row as $cell)
-                                                <td class="px-3 py-2 text-slate-700">{{ $cell }}</td>
+                                                <td class="px-3 py-2 text-ink-2">{{ $cell }}</td>
                                             @endforeach
                                         </tr>
                                     @endforeach
@@ -81,16 +81,16 @@
                     @endif
 
                     @foreach ($section->notes as $note)
-                        <p class="mt-2 text-xs text-slate-500">{{ $note }}</p>
+                        <p class="mt-2 text-xs text-ink-3">{{ $note }}</p>
                     @endforeach
                 </div>
             @endforeach
 
             @if ($preview->narrative)
-                <div class="mt-4 rounded-md bg-slate-50 p-3 ring-1 ring-inset ring-slate-200">
-                    <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Narrative</p>
-                    <p class="mt-1 whitespace-pre-line text-sm text-slate-700">{{ $preview->narrative }}</p>
-                    <p class="mt-2 text-xs text-slate-500">
+                <div class="mt-4 rounded-md bg-raised p-3 ring-1 ring-inset ring-line">
+                    <p class="text-xs font-medium uppercase tracking-wide text-ink-3">Narrative</p>
+                    <p class="mt-1 whitespace-pre-line text-sm text-ink-2">{{ $preview->narrative }}</p>
+                    <p class="mt-2 text-xs text-ink-3">
                         Prose attached alongside the figures above. It is never the source of a number.
                     </p>
                 </div>
@@ -103,7 +103,7 @@
         <x-ui.table :headings="['Report', 'Format', 'Generated', 'By', 'Checksum', '>']"
                     class="rounded-none shadow-none ring-0">
             @forelse ($artifacts as $artifact)
-                <tr wire:key="artifact-{{ $artifact->id }}" class="hover:bg-slate-50">
+                <tr wire:key="artifact-{{ $artifact->id }}" class="hover:bg-elevated">
                     <x-ui.td class="font-medium">{{ Str::headline($artifact->report_key) }}</x-ui.td>
                     <x-ui.td><x-ui.badge>{{ strtoupper($artifact->format) }}</x-ui.badge></x-ui.td>
                     <x-ui.td muted>{{ $artifact->generated_at?->format('d M Y H:i') }}</x-ui.td>

@@ -72,7 +72,7 @@
                             <x-ui.td class="font-medium">{{ $assignment->title }}</x-ui.td>
                             <x-ui.td muted>{{ $assignment->sessionInstance?->batch?->code }}</x-ui.td>
                             <x-ui.td>
-                                <span class="text-rose-700">{{ $assignment->due_at?->format('d M Y') }}</span>
+                                <span class="text-danger">{{ $assignment->due_at?->format('d M Y') }}</span>
                             </x-ui.td>
                             <x-ui.td align="right">
                                 <x-ui.button size="sm" :href="route('assignments.show', $assignment)">Open</x-ui.button>
@@ -138,7 +138,7 @@
         @endif
     </div>
 
-    <p class="mt-6 text-xs text-slate-500">
+    <p class="mt-6 text-xs text-ink-3">
         Attendance percentage and completion scores are deliberately absent: their weighting is an
         open client decision, so no figure is shown rather than an invented one.
     </p>

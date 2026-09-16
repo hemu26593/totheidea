@@ -13,11 +13,11 @@
                 $lastReview = $submission?->reviews->sortByDesc('reviewed_at')->first();
             @endphp
 
-            <tr wire:key="instance-{{ $instance->id }}" class="hover:bg-slate-50">
+            <tr wire:key="instance-{{ $instance->id }}" class="hover:bg-elevated">
                 <x-ui.td class="font-medium">{{ $instance->title }}</x-ui.td>
                 <x-ui.td muted>Session {{ $instance->sessionInstance?->sessionTemplate?->sequence }}</x-ui.td>
                 <x-ui.td>
-                    <span class="{{ $overdue ? 'font-medium text-rose-700' : 'text-slate-600' }}">
+                    <span class="{{ $overdue ? 'font-medium text-danger' : 'text-ink-2' }}">
                         {{ $instance->due_at?->format('d M Y') }}
                     </span>
                 </x-ui.td>
@@ -68,7 +68,7 @@
     <x-ui.modal :show="$submittingInstanceId !== null" title="Record a submission"
                 close="$set('submittingInstanceId', null)">
         <form wire:submit="submit" class="space-y-4">
-            <p class="text-sm text-slate-600">
+            <p class="text-sm text-ink-2">
                 Participants have no account, so a submission taken on paper or by phone is recorded here.
                 It is stored as a staff-entered submission, and the record says so.
             </p>

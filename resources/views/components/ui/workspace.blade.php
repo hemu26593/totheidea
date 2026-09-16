@@ -13,7 +13,7 @@
                       :breadcrumbs="['Customers' => route('customers.index'), $customer->name => route('customers.show', $customer)]">
         <x-slot:actions>
             <x-ui.status-badge :status="$customer->status" />
-            <span class="rounded bg-slate-100 px-2 py-1 font-mono text-xs text-slate-600">{{ $customer->code }}</span>
+            <span class="rounded bg-elevated px-2 py-1 font-mono text-xs text-gold ring-1 ring-inset ring-gold-line">{{ $customer->code }}</span>
             {{ $actions ?? '' }}
         </x-slot:actions>
     </x-ui.page-header>

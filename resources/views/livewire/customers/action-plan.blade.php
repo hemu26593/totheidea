@@ -37,11 +37,11 @@
             @forelse ($items as $item)
                 @php $overdue = $item->isOpen() && $item->due_date?->isPast(); @endphp
 
-                <tr wire:key="action-{{ $item->id }}" class="hover:bg-slate-50">
+                <tr wire:key="action-{{ $item->id }}" class="hover:bg-elevated">
                     <x-ui.td>
                         <p class="font-medium">{{ $item->title }}</p>
                         @if ($item->description)
-                            <p class="mt-0.5 text-xs text-slate-500">{{ Str::limit($item->description, 120) }}</p>
+                            <p class="mt-0.5 text-xs text-ink-3">{{ Str::limit($item->description, 120) }}</p>
                         @endif
                     </x-ui.td>
 
@@ -52,7 +52,7 @@
                     </x-ui.td>
 
                     <x-ui.td>
-                        <span class="{{ $overdue ? 'font-medium text-rose-700' : 'text-slate-600' }}">
+                        <span class="{{ $overdue ? 'font-medium text-danger' : 'text-ink-2' }}">
                             {{ $item->due_date?->format('d M Y') ?? '—' }}
                         </span>
                     </x-ui.td>

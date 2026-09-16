@@ -54,7 +54,7 @@
             <x-ui.status-badge :status="$plan->status" />
 
             @if ($plan->status === App\Models\FundPlan::STATUS_APPROVED)
-                <span class="text-xs text-slate-500">
+                <span class="text-xs text-ink-3">
                     Approved {{ $plan->approved_at?->format('d M Y') }} — closed to further lines.
                 </span>
             @endif
@@ -110,7 +110,7 @@
                         @endforelse
 
                         @if ($lines->isNotEmpty())
-                            <tr class="bg-slate-50 font-medium">
+                            <tr class="bg-raised font-medium">
                                 <x-ui.td colspan="4">Section total</x-ui.td>
                                 <x-ui.td align="right" class="tabular-nums">
                                     {{ number_format((float) $lines->sum(fn ($l) => (float) ($l->planned_amount ?? 0)), 2) }}

@@ -92,7 +92,12 @@ class OnboardingAndIntakeUatTest extends TestCase
             ->call('save');
 
         $alpha = Customer::query()->firstWhere('code', 'C-ALPHA');
-        $this->assertSame('prospect', $alpha->status, 'A new customer starts as a prospect.');
+
+        // The client confirmed that every customer reaching this system is
+        // already a final, confirmed customer, so the prospect stage no longer
+        // exists on the way in. This assertion tracks that rule change: a new
+        // customer is active, with no separate activation step to remember.
+        $this->assertSame('active', $alpha->status, 'A new customer is already confirmed.');
 
         // 2. Add the contact reminders will go to.
         Livewire::actingAs($admin)

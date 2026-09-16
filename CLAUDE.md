@@ -96,6 +96,18 @@ role-based authorization** (ADR-007 … ADR-014), the **complete BMP domain laye
 application UI** built on top of it, and the **external participant form
 surface** (ADR-015).
 
+Programme entry is one action (ADR-016). Every customer here is already a
+confirmed customer, so creating one, entering the person we deal with and
+choosing their batch activates them and leaves them ready to be sent a form
+link: there is no prospect stage to clear, no payment to confirm, no separate
+enrol step and no return trip to add a contact. That contact is created through
+`CustomerContactService` as the primary one — the same flag `RecipientResolver`
+reads — never a second primary mechanism. `Enrollment` is retained unchanged as the ownership spine — twelve
+tables carry a NOT NULL `enrollment_id` — but it is an internal record, not a
+workflow. Do not reintroduce "enrol" as something an operator performs, and do
+not make payment a condition of participation: `payment_due_date` drives
+notification trigger 7 and nothing else.
+
 External participation is two unauthenticated routes, `GET` and `POST`
 `/external/forms/{token}`, and nothing else. The token is the whole authority:
 it is re-validated from the database on every request, no customer, enrolment,

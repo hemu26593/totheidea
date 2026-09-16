@@ -37,7 +37,7 @@
                     @foreach ($metrics as $metric)
                         <x-ui.td align="right" class="tabular-nums">
                             @if ($entry->{$metric} === null)
-                                <span class="text-slate-300">—</span>
+                                <span class="text-ink-3">—</span>
                             @else
                                 {{ in_array($metric, $moneyMetrics, true)
                                     ? number_format((float) $entry->{$metric}, 2)
@@ -67,7 +67,7 @@
                         <x-ui.td class="font-medium">
                             {{ $label }}
                             @if (! ($recordedOn[$label] ?? false))
-                                <span class="ml-1 text-xs font-normal text-slate-400">no entry</span>
+                                <span class="ml-1 text-xs font-normal text-ink-3">no entry</span>
                             @endif
                         </x-ui.td>
                         <x-ui.td muted class="tabular-nums">{{ $totals['entry_count'] ?? 0 }}</x-ui.td>
@@ -75,7 +75,7 @@
                         @foreach ($metrics as $metric)
                             <x-ui.td align="right" class="tabular-nums">
                                 @if (($totals[$metric] ?? null) === null)
-                                    <span class="text-slate-300">—</span>
+                                    <span class="text-ink-3">—</span>
                                 @else
                                     {{ in_array($metric, $moneyMetrics, true)
                                         ? number_format((float) $totals[$metric], 2)
@@ -87,7 +87,7 @@
                 @endforeach
             </x-ui.table>
 
-            <p class="px-4 py-3 text-xs text-slate-500">
+            <p class="px-4 py-3 text-xs text-ink-3">
                 A missing entry is shown as missing, not as a failure: whether an absence on a review day
                 counts against the business is an open client decision.
             </p>
@@ -112,9 +112,9 @@
                         </x-ui.td>
                         <x-ui.td align="right" class="tabular-nums">
                             @if ($c['variance'] === null)
-                                <span class="text-slate-300">—</span>
+                                <span class="text-ink-3">—</span>
                             @else
-                                <span class="{{ $c['variance'] < 0 ? 'text-rose-700' : 'text-emerald-700' }}">
+                                <span class="{{ $c['variance'] < 0 ? 'text-danger' : 'text-success' }}">
                                     {{ $c['variance'] > 0 ? '+' : '' }}{{ number_format($c['variance'], 2) }}
                                 </span>
                             @endif
@@ -126,7 +126,7 @@
                 @endforelse
             </x-ui.table>
 
-            <p class="px-4 py-3 text-xs text-slate-500">
+            <p class="px-4 py-3 text-xs text-ink-3">
                 Variance is the difference between two recorded numbers. It carries no grade or band —
                 what a variance means has not been defined.
             </p>
@@ -135,7 +135,7 @@
 
     <x-ui.modal :show="$recording" title="Record MMD figures" close="$set('recording', false)">
         <form wire:submit="record" class="space-y-4">
-            <p class="text-sm text-slate-600">
+            <p class="text-sm text-ink-2">
                 For {{ \Carbon\CarbonImmutable::parse($date)->format('d M Y') }}. Leave a measure blank if it
                 was not recorded — blank is not zero.
             </p>

@@ -26,10 +26,10 @@
 
     <x-ui.table :headings="['Batch', 'Programme', 'Starts', 'Status', 'Enrolled', 'Capacity', '>']">
         @forelse ($batches as $batch)
-            <tr wire:key="batch-{{ $batch->id }}" class="hover:bg-slate-50">
+            <tr wire:key="batch-{{ $batch->id }}" class="hover:bg-elevated">
                 <x-ui.td>
                     <span class="font-medium">{{ $batch->name }}</span>
-                    <span class="ml-1.5 font-mono text-xs text-slate-500">{{ $batch->code }}</span>
+                    <span class="ml-1.5 font-mono text-xs text-ink-3">{{ $batch->code }}</span>
                 </x-ui.td>
                 <x-ui.td muted>{{ $batch->program?->name }}</x-ui.td>
                 <x-ui.td muted>{{ $batch->starts_on?->format('d M Y') }}</x-ui.td>

@@ -26,7 +26,7 @@
         @endforelse
     </x-ui.table>
 
-    <p class="mt-4 max-w-2xl text-xs text-slate-500">
+    <p class="mt-4 max-w-2xl text-xs text-ink-3">
         A skill area carries no thresholds and no bands. What counts as weak or strong within one has not
         been defined, so no field anticipates the answer.
     </p>

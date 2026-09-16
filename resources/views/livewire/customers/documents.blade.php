@@ -12,7 +12,7 @@
 
     <x-ui.table :headings="['File', 'Type', 'Size', 'Visibility', 'Uploaded', '>Actions']">
         @forelse ($documents as $document)
-            <tr wire:key="document-{{ $document->id }}" class="hover:bg-slate-50">
+            <tr wire:key="document-{{ $document->id }}" class="hover:bg-elevated">
                 <x-ui.td class="font-medium">{{ $document->original_name }}</x-ui.td>
                 <x-ui.td muted><span class="font-mono text-xs">{{ $document->mime_type }}</span></x-ui.td>
                 <x-ui.td muted class="tabular-nums">
@@ -53,17 +53,17 @@
         <form wire:submit="upload" class="space-y-4">
             <x-ui.field label="File" required hint="Up to 20 MB." :error="$errors->first('file')">
                 <input type="file" wire:model="file"
-                       class="block w-full text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-sm file:text-white hover:file:bg-slate-700">
+                       class="block w-full text-sm text-ink-2 file:mr-3 file:rounded-md file:border-0 file:bg-gold file:px-3 file:py-2 file:text-sm file:font-medium file:text-canvas hover:file:bg-gold-bright">
             </x-ui.field>
 
             <x-ui.loading target="file" label="Uploading…" />
 
-            <label class="flex items-start gap-2 text-sm text-slate-700">
+            <label class="flex items-start gap-2 text-sm text-ink-2">
                 <input type="checkbox" wire:model="internal"
-                       class="mt-0.5 rounded border-slate-300 text-slate-900 focus:ring-slate-900">
+                       class="mt-0.5 rounded border-line text-ink focus:ring-gold">
                 <span>
                     Internal only
-                    <span class="block text-xs text-slate-500">
+                    <span class="block text-xs text-ink-3">
                         Left on by default — an over-restricted file is a better mistake than a leaked one.
                     </span>
                 </span>

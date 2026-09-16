@@ -13,7 +13,7 @@
 
     <x-ui.table :headings="['Programme', 'Code', 'Sessions', 'Batches', 'Curriculum', '>']">
         @forelse ($programs as $program)
-            <tr wire:key="program-{{ $program->id }}" class="hover:bg-slate-50">
+            <tr wire:key="program-{{ $program->id }}" class="hover:bg-elevated">
                 <x-ui.td class="font-medium">{{ $program->name }}</x-ui.td>
                 <x-ui.td muted><span class="font-mono text-xs">{{ $program->code }}</span></x-ui.td>
                 <x-ui.td muted class="tabular-nums">{{ $program->session_count }}</x-ui.td>

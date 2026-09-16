@@ -33,7 +33,7 @@
 
     <div class="mb-5 grid gap-5 lg:grid-cols-3">
         <x-ui.card title="Provenance" subtitle="What was asked, by whom, of which prompt.">
-            <dl class="divide-y divide-slate-100">
+            <dl class="divide-y divide-line">
                 <x-ui.definition term="Customer">
                     @can('customers.view')
                         <a href="{{ route('customers.show', $generation->customer_id) }}" class="hover:underline">
@@ -59,7 +59,7 @@
                 <x-ui.definition term="Tokens used">{{ $generation->tokens_used ?? '—' }}</x-ui.definition>
             </dl>
 
-            <p class="mt-3 border-t border-slate-100 pt-3 text-xs text-slate-500">
+            <p class="mt-3 border-t border-line pt-3 text-xs text-ink-3">
                 Provider credentials are never shown here and are not reachable from this screen.
             </p>
         </x-ui.card>
@@ -82,11 +82,11 @@
 
                 @foreach ($stages as [$label, $description, $done])
                     <li class="flex items-start gap-3">
-                        <span class="mt-1 h-2 w-2 shrink-0 rounded-full {{ $done ? 'bg-emerald-500' : 'bg-slate-300' }}"
+                        <span class="mt-1 h-2 w-2 shrink-0 rounded-full {{ $done ? 'bg-success-wash0' : 'bg-line-strong' }}"
                               aria-hidden="true"></span>
                         <div>
-                            <p class="text-sm font-medium {{ $done ? 'text-slate-900' : 'text-slate-400' }}">{{ $label }}</p>
-                            <p class="text-xs text-slate-500">{{ $description }}</p>
+                            <p class="text-sm font-medium {{ $done ? 'text-ink' : 'text-ink-3' }}">{{ $label }}</p>
+                            <p class="text-xs text-ink-3">{{ $description }}</p>
                         </div>
                     </li>
                 @endforeach
@@ -108,19 +108,19 @@
         <x-ui.card title="Decision" class="mb-5">
             <div class="flex flex-wrap items-center gap-3">
                 <x-ui.status-badge :status="$generation->approval->decision" />
-                <span class="text-sm text-slate-700">
+                <span class="text-sm text-ink-2">
                     {{ $generation->approval->decidedBy?->name }}
                 </span>
-                <span class="text-xs text-slate-400">
+                <span class="text-xs text-ink-3">
                     {{ $generation->approval->decided_at?->format('d M Y H:i') }}
                 </span>
             </div>
 
             @if ($generation->approval->remark)
-                <p class="mt-2 text-sm text-slate-700">{{ $generation->approval->remark }}</p>
+                <p class="mt-2 text-sm text-ink-2">{{ $generation->approval->remark }}</p>
             @endif
 
-            <p class="mt-3 border-t border-slate-100 pt-3 text-xs text-slate-500">
+            <p class="mt-3 border-t border-line pt-3 text-xs text-ink-3">
                 One decision per generation. Reversing a judgement means generating again, so the original
                 and who made it stay on the record.
             </p>
@@ -130,13 +130,13 @@
     <div class="grid gap-5 xl:grid-cols-2">
         <x-ui.card title="Proposed output" subtitle="Data, never executed.">
             @if ($generation->validated_output)
-                <pre class="max-h-96 overflow-auto rounded-md bg-slate-900 p-3 text-xs leading-relaxed text-slate-100">{{ json_encode($generation->validated_output, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) }}</pre>
+                <pre class="max-h-96 overflow-auto rounded-md bg-canvas p-3 text-xs leading-relaxed text-ink-2 ring-1 ring-inset ring-line">{{ json_encode($generation->validated_output, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) }}</pre>
             @elseif ($generation->raw_output)
-                <p class="mb-2 text-xs text-slate-500">
+                <p class="mb-2 text-xs text-ink-3">
                     Raw output — it did not validate against the schema, so it was never persisted as
                     structure and never reached the form engine.
                 </p>
-                <pre class="max-h-96 overflow-auto rounded-md bg-slate-100 p-3 text-xs leading-relaxed text-slate-700">{{ $generation->raw_output }}</pre>
+                <pre class="max-h-96 overflow-auto rounded-md bg-elevated p-3 text-xs leading-relaxed text-ink-2">{{ $generation->raw_output }}</pre>
             @else
                 <x-ui.empty title="Nothing came back"
                             description="The provider call did not return usable text. The attempt is still recorded." />
@@ -144,9 +144,9 @@
         </x-ui.card>
 
         <x-ui.card title="Context the model saw" subtitle="Written once. Never read back into business logic.">
-            <pre class="max-h-96 overflow-auto rounded-md bg-slate-50 p-3 text-xs leading-relaxed text-slate-700 ring-1 ring-inset ring-slate-200">{{ json_encode($generation->input_context, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) }}</pre>
+            <pre class="max-h-96 overflow-auto rounded-md bg-raised p-3 text-xs leading-relaxed text-ink-2 ring-1 ring-inset ring-line">{{ json_encode($generation->input_context, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) }}</pre>
 
-            <p class="mt-3 text-xs text-slate-500">
+            <p class="mt-3 text-xs text-ink-3">
                 Assembled at call time from this business's own records only. Text a participant wrote is
                 carried as clearly-marked quoted material and never as instruction.
             </p>
@@ -161,7 +161,7 @@
                         {{ $generation->resultingFormVersion->formTemplate?->name }}
                         — v{{ $generation->resultingFormVersion->version_number }}
                     </p>
-                    <p class="text-xs text-slate-500">
+                    <p class="text-xs text-ink-3">
                         Built through the ordinary form engine, so it is answered and scored by exactly the
                         same code as a hand-authored form.
                     </p>
@@ -198,7 +198,7 @@
     </x-ui.modal>
 
     <x-ui.modal :show="$deciding" title="Review AI output" close="$set('deciding', false)">
-        <p class="text-sm text-slate-600">
+        <p class="text-sm text-ink-2">
             Approving publishes whatever draft this generation produced, credited to you. Rejecting leaves
             the draft unpublished; it is not deleted.
         </p>

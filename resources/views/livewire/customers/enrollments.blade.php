@@ -1,8 +1,8 @@
 <x-ui.workspace :customer="$customer" :tabs="$tabs" current="enrollments"
-                :subtitle="'Programme enrolments and their lifecycle.'">
+                :subtitle="'Which batches this business is part of, and how each run is going.'">
     <x-slot:actions>
         @can('create', App\Models\Enrollment::class)
-            <x-ui.button size="sm" variant="primary" wire:click="startEnrolment">Enrol in batch</x-ui.button>
+            <x-ui.button size="sm" variant="primary" wire:click="startEnrolment">Assign to batch</x-ui.button>
         @endcan
     </x-slot:actions>
 
@@ -32,7 +32,7 @@
                 </x-slot:actions>
 
                 <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <dl class="divide-y divide-slate-100">
+                    <dl class="divide-y divide-line">
                         <x-ui.definition term="Batch code">
                             <span class="font-mono text-xs">{{ $enrollment->batch?->code }}</span>
                         </x-ui.definition>
@@ -41,7 +41,7 @@
                         </x-ui.definition>
                     </dl>
 
-                    <dl class="divide-y divide-slate-100">
+                    <dl class="divide-y divide-line">
                         <x-ui.definition term="Enrolled">
                             {{ $enrollment->enrolled_at?->format('d M Y') }}
                         </x-ui.definition>
@@ -50,12 +50,12 @@
                         </x-ui.definition>
                     </dl>
 
-                    <dl class="divide-y divide-slate-100">
+                    <dl class="divide-y divide-line">
                         <x-ui.definition term="Attendance marks">{{ $enrollment->attendances_count }}</x-ui.definition>
                         <x-ui.definition term="Form submissions">{{ $enrollment->form_submissions_count }}</x-ui.definition>
                     </dl>
 
-                    <dl class="divide-y divide-slate-100">
+                    <dl class="divide-y divide-line">
                         <x-ui.definition term="Assignment submissions">
                             {{ $enrollment->assignment_submissions_count }}
                         </x-ui.definition>
@@ -69,7 +69,7 @@
                     </x-ui.alert>
                 @endif
 
-                <div class="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
+                <div class="mt-4 flex flex-wrap gap-2 border-t border-line pt-3">
                     @can('sessions.view')
                         <x-ui.button size="sm" :href="route('customers.sessions', $customer)">Sessions</x-ui.button>
                     @endcan
@@ -84,7 +84,7 @@
                     @endcan
                 </div>
 
-                <p class="mt-3 text-xs text-slate-500">
+                <p class="mt-3 text-xs text-ink-3">
                     Progress is not shown as a single percentage: attendance weighting and completion
                     weighting are open client decisions, and the counts above are facts rather than a
                     formula.
@@ -92,13 +92,13 @@
             </x-ui.card>
         @empty
             <x-ui.card>
-                <x-ui.empty title="Not enrolled in any batch"
-                            description="A business joins the programme by being enrolled in a batch. Everything else — sessions, assignments, trackers — hangs off that enrolment." />
+                <x-ui.empty title="No batch assigned yet"
+                            description="Assign this business to a batch and they are an active programme participant straight away. Sessions, assignments and trackers all follow from the batch." />
             </x-ui.card>
         @endforelse
     </div>
 
-    <x-ui.modal :show="$enrolling" title="Enrol in a batch" close="$set('enrolling', false)">
+    <x-ui.modal :show="$enrolling" title="Assign to a batch" close="$set('enrolling', false)">
         <form wire:submit="enrol" class="space-y-4">
             <x-ui.field label="Batch" required :error="$errors->first('batchId')">
                 <x-ui.select wire:model="batchId">
@@ -113,26 +113,27 @@
 
             @if ($availableBatches->isEmpty())
                 <x-ui.alert tone="info">
-                    There is no batch this business is not already in. Create a batch first, or check the
-                    existing enrolments.
+                    This business is already in every batch there is. Create a batch first, or check the
+                    runs listed behind this dialog.
                 </x-ui.alert>
             @endif
 
-            <x-ui.field label="Payment due date" hint="Optional. Drives the payment reminder if set."
+            <x-ui.field label="Payment due date"
+                        hint="Optional, and never a condition of taking part — participation starts on save either way. Set it only to schedule the payment reminder."
                         :error="$errors->first('paymentDueDate')">
                 <x-ui.input type="date" wire:model="paymentDueDate" />
             </x-ui.field>
 
             <div class="flex justify-end gap-2 pt-2">
                 <x-ui.button type="button" wire:click="$set('enrolling', false)">Cancel</x-ui.button>
-                <x-ui.button variant="primary" type="submit" :disabled="$availableBatches->isEmpty()">Enrol</x-ui.button>
+                <x-ui.button variant="primary" type="submit" :disabled="$availableBatches->isEmpty()">Assign to batch</x-ui.button>
             </div>
         </form>
     </x-ui.modal>
 
     <x-ui.modal :show="$withdrawingId !== null" title="Withdraw enrolment" close="$set('withdrawingId', null)">
         <form wire:submit="withdraw" class="space-y-4">
-            <p class="text-sm text-slate-600">
+            <p class="text-sm text-ink-2">
                 Withdrawal is recorded with its reason and stays on the enrolment. Nothing already
                 submitted is removed.
             </p>
