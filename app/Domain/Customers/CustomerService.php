@@ -24,10 +24,12 @@ class CustomerService
     public function __construct(
         private readonly AuditLogger $audit,
         private readonly EnrollmentService $enrollments,
+        private readonly CustomerContactService $contacts,
     ) {}
 
     /**
-     * Create a customer and, when a batch is given, put them straight into it.
+     * Bring a customer into the programme in one action: the business, the
+     * person we deal with, and the batch they are running in.
      *
      * Every customer reaching this system is already confirmed, so programme
      * entry is one action: the batch assignment IS the activation. There is no
@@ -35,17 +37,28 @@ class CustomerService
      * here because twelve tables carry a NOT NULL enrollment_id and resolve
      * customer isolation through it, not because the user is enrolling anyone.
      *
-     * Both writes share one transaction: a customer saved without the batch
-     * they were meant to be in is precisely the half-finished state this
-     * change exists to remove, so a failed assignment takes the customer with
+     * The contact is created through CustomerContactService as the primary
+     * one, so it is the same primary contact the rest of the system already
+     * knows: RecipientResolver finds it, and a form link can be sent without
+     * anybody revisiting the record to add it. There is no second primary
+     * mechanism here.
+     *
+     * All the writes share one transaction. A customer saved without the batch
+     * or the contact they were entered with is precisely the half-finished
+     * state this exists to remove, so any failure takes the whole thing with
      * it and the operator sees why.
      *
      * @param  array{name: string, code: string}  $attributes
+     * @param  array{name: string, email?: string|null, phone_e164?: string|null}|null  $contact
      */
-    public function createInBatch(array $attributes, ?Batch $batch, User $actor): Customer
+    public function createInBatch(array $attributes, ?Batch $batch, ?array $contact, User $actor): Customer
     {
-        return DB::transaction(function () use ($attributes, $batch, $actor): Customer {
+        return DB::transaction(function () use ($attributes, $batch, $contact, $actor): Customer {
             $customer = $this->create($attributes, $actor);
+
+            if ($contact !== null) {
+                $this->contacts->create($customer, $contact, $actor, primary: true);
+            }
 
             if ($batch !== null) {
                 $this->enrollments->enrol($customer, $batch, $actor);

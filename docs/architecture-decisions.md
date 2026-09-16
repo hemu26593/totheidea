@@ -743,9 +743,21 @@ longer a step anybody performs — the UI speaks of Programme and Batch, and the
 word "enrol" has left the operator's vocabulary — but it remains the ownership
 spine and nothing about its structure, its service or its policy has moved.
 
+The same action captures the primary contact, because a form link is addressed
+to one and a business created without one could not be sent anything until
+somebody reopened the record. It is created through `CustomerContactService`
+with its existing primary flag — the flag `RecipientResolver`,
+`Customer::primaryContact()` and `FormLinkService` already read — so there is no
+second primary-contact mechanism, and managing contacts after that (further
+contacts, promotion, consent, archiving) stays on the customer's own screen,
+which already does all of it.
+
 Assignment stays optional, so a customer may still be recorded before their
 batch is known, and changing which batch an existing customer sits in remains on
-the Programme screen, where it carries its own history.
+the Programme screen, where it carries its own history. The contact block is
+optional on the same grounds, with one condition: a name without an address is
+refused, because `RecipientResolver` skips a contact that has no email and such
+a row would quietly defeat the reason the block exists.
 
 ### Consequences
 

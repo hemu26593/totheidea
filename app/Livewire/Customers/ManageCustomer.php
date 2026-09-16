@@ -8,6 +8,7 @@ use App\Domain\Customers\CustomerService;
 use App\Livewire\Concerns\ReportsDomainFailures;
 use App\Models\Batch;
 use App\Models\Customer;
+use App\Models\CustomerContact;
 use App\Models\Enrollment;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
@@ -31,6 +32,12 @@ use Livewire\Component;
  * Changing which batch an existing customer sits in is a different operation
  * with its own history - withdrawing one run and starting another - so it
  * stays on the Programme screen and is deliberately not an edit field here.
+ *
+ * The contact fields are likewise creation-only, and exist to capture the ONE
+ * person a new business is reached through - the primary contact a form link
+ * goes to. Managing contacts after that (adding more, changing which is
+ * primary, archiving, consent) stays on the customer's own screen, which
+ * already does all of it; nothing here duplicates that.
  */
 class ManageCustomer extends Component
 {
@@ -44,6 +51,12 @@ class ManageCustomer extends Component
     public string $code = '';
 
     public ?int $batchId = null;
+
+    public string $contactName = '';
+
+    public string $contactEmail = '';
+
+    public string $contactPhone = '';
 
     public function mount(?Customer $customer = null): void
     {
@@ -70,11 +83,15 @@ class ManageCustomer extends Component
             ? $this->authorize('create', Customer::class)
             : $this->authorize('update', $existing);
 
-        // A batch is only ever assigned while creating. Authorized separately
-        // because it writes a second table, and this method is reachable over
-        // HTTP whatever the form rendered.
+        // A batch and a contact are only ever written while creating, and each
+        // writes a second table, so each is authorized in its own right. This
+        // method is reachable over HTTP whatever the form rendered.
         if ($existing === null && $this->batchId !== null) {
             $this->authorize('create', Enrollment::class);
+        }
+
+        if ($existing === null && $this->hasContactDetails()) {
+            $this->authorize('create', CustomerContact::class);
         }
 
         $rules = [
@@ -87,6 +104,16 @@ class ManageCustomer extends Component
 
         if ($existing === null) {
             $rules['batchId'] = ['nullable', 'integer', Rule::exists('batches', 'id')->whereNull('archived_at')];
+
+            // The same rules the customer's own screen uses, with one
+            // difference: a half-entered contact is refused. The reason this
+            // block exists is to produce somebody a form link can reach, and a
+            // contact with no address reaches nobody - RecipientResolver skips
+            // it. Leaving all three blank is still fine; the contact can be
+            // added later on the customer's screen.
+            $rules['contactName'] = ['nullable', 'string', 'max:150', 'required_with:contactEmail,contactPhone'];
+            $rules['contactEmail'] = ['nullable', 'email', 'max:255', 'required_with:contactName,contactPhone'];
+            $rules['contactPhone'] = ['nullable', 'string', 'max:20'];
         }
 
         $data = $this->validate($rules);
@@ -97,9 +124,10 @@ class ManageCustomer extends Component
                 ? $this->customerId = (int) $customers->createInBatch(
                     ['name' => $data['name'], 'code' => $data['code']],
                     $batch,
+                    $this->contactAttributes(),
                     auth()->user(),
                 )->getKey()
-                : $customers->update($existing, $data, auth()->user());
+                : $customers->update($existing, ['name' => $data['name'], 'code' => $data['code']], auth()->user());
         }, $this->outcomeMessage($existing, $batch));
 
         if ($saved) {
@@ -143,6 +171,32 @@ class ManageCustomer extends Component
             ->whereNull('archived_at')
             ->orderByDesc('starts_on')
             ->get();
+    }
+
+    private function hasContactDetails(): bool
+    {
+        return trim($this->contactName) !== ''
+            || trim($this->contactEmail) !== ''
+            || trim($this->contactPhone) !== '';
+    }
+
+    /**
+     * The contact to create alongside the customer, in the Contact model's own
+     * field names. Null when the operator left the block empty.
+     *
+     * @return array{name: string, email: string|null, phone_e164: string|null}|null
+     */
+    private function contactAttributes(): ?array
+    {
+        if (! $this->hasContactDetails()) {
+            return null;
+        }
+
+        return [
+            'name' => trim($this->contactName),
+            'email' => trim($this->contactEmail) ?: null,
+            'phone_e164' => trim($this->contactPhone) ?: null,
+        ];
     }
 
     private function chosenBatch(?Customer $existing): ?Batch
