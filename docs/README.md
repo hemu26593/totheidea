@@ -108,6 +108,43 @@ Or run PHPUnit directly for more control:
 Tests must pass before a feature is considered complete. See the development
 process rules in the root `CLAUDE.md`.
 
+## Demonstration data
+
+One command fills a local database with a realistic Business Mastery Programme
+— twelve fictional Gujarat manufacturing businesses, their contacts, four
+batches, the six-session curriculum, five published forms, submissions,
+attendance, assignments, trackers and reports:
+
+```bash
+php artisan demo:reset          # asks before it deletes
+php artisan demo:reset --force  # skips the prompt
+```
+
+**It deletes data.** Every safeguard is deliberate:
+
+- It runs only when `APP_ENV` is `local`, `development` or `testing`. That is
+  an allowlist, not a check for production, so an environment nobody
+  anticipated — `staging`, `uat` — is refused rather than wiped.
+- It never runs `migrate:fresh`, so it cannot drop the schema.
+- It clears only the domain tables, child before parent, leaving `users`,
+  roles and permissions alone. The Super Admin created by `SuperAdminSeeder`
+  survives and you stay signed in. The command never creates or prints a
+  password.
+- It is re-runnable: the second run produces the same dataset, not two of
+  everything.
+
+Every business is fictional and every address is under `.example.test`, which
+is reserved and cannot reach a real inbox. Mail is not sent — `MAIL_MAILER=log`
+locally writes it to `storage/logs`.
+
+The data is written through the same domain services the application uses, so
+enrolments, publication, scoring and access grants obey every rule the real
+screens obey. Two things are deliberately not seeded: AI generations, which
+would mean calling a provider (the Generations screen stays empty until you
+run one), and an external form link's plaintext token, which is never
+persisted by design — press **Send form link** on a customer's Forms screen to
+produce a working one.
+
 ## How to build frontend assets
 
 ```bash
