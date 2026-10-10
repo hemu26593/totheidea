@@ -120,7 +120,7 @@ class SmokeTest extends TestCase
     private function customerRoutes(): array
     {
         return [
-            'customers.show', 'customers.edit', 'customers.enrollments', 'customers.forms',
+            'customers.show', 'customers.edit', 'customers.forms',
             'customers.sessions', 'customers.assignments', 'customers.attendance',
             'customers.day-plan', 'customers.time-grid', 'customers.mmd', 'customers.fund-plan',
             'customers.action-plan', 'customers.business', 'customers.documents',

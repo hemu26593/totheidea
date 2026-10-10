@@ -32,7 +32,7 @@
             </tr>
         @empty
             <x-ui.empty-row :colspan="9" title="No sessions scheduled"
-                            description="Sessions are scheduled against the batch this business is enrolled in." />
+                            description="Sessions are scheduled against the batch this business is in." />
         @endforelse
     </x-ui.table>
 </x-ui.workspace>

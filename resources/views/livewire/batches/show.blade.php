@@ -44,7 +44,7 @@
             </x-ui.table>
         </x-ui.card>
 
-        <x-ui.card title="Roster" subtitle="Businesses enrolled in this batch." :padding="false">
+        <x-ui.card title="Roster" subtitle="Businesses taking part in this batch." :padding="false">
             <x-ui.table :headings="['Customer', 'Code', 'Status', '>']" class="rounded-none shadow-none ring-0">
                 @forelse ($enrollments as $enrollment)
                     <tr wire:key="roster-{{ $enrollment->id }}">
@@ -58,7 +58,7 @@
                         </x-ui.td>
                     </tr>
                 @empty
-                    <x-ui.empty-row :colspan="4" title="Nobody enrolled yet" />
+                    <x-ui.empty-row :colspan="4" title="No participants yet" />
                 @endforelse
             </x-ui.table>
         </x-ui.card>

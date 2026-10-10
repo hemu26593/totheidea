@@ -55,9 +55,6 @@ Route::middleware(['auth', 'active'])->group(function (): void {
         Route::get('/{customer}', Livewire\Customers\Show::class)
             ->middleware('can:customers.view')->name('show');
 
-        Route::get('/{customer}/enrollments', Livewire\Customers\Enrollments::class)
-            ->middleware('can:customers.view')->name('enrollments');
-
         /*
         | The workspace tabs. Each carries the COARSE permission for its kind
         | of screen; the component then re-authorizes the specific customer on

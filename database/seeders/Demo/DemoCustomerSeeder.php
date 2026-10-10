@@ -17,11 +17,6 @@ use Illuminate\Database\Seeder;
  * parallel one. Each business therefore arrives active, with a primary contact
  * RecipientResolver can find, and with the enrolment the rest of the domain
  * hangs off. Nothing is enrolled by hand and nothing is activated afterwards.
- *
- * One business is deliberately left with a payment due date a little in the
- * past, so the payment reminder trigger has something to find during a
- * demonstration. It is a reminder, not a gate: that business is as active as
- * every other one.
  */
 class DemoCustomerSeeder extends Seeder
 {
@@ -52,31 +47,5 @@ class DemoCustomerSeeder extends Seeder
                 $actor,
             );
         }
-
-        $this->giveOneBusinessAPaymentReminder();
-    }
-
-    /**
-     * Trigger 7 reads enrollments.payment_due_date and nothing else. Setting
-     * one gives the Notifications screen something real to show; leaving the
-     * rest null is what makes the point that participation never depended on
-     * it.
-     */
-    private function giveOneBusinessAPaymentReminder(): void
-    {
-        $customer = Customer::query()
-            ->where('code', DemoDataset::CODE_PREFIX.'PRAKASH')
-            ->with('enrollments')
-            ->first();
-
-        $enrollment = $customer?->enrollments->first();
-
-        if ($enrollment === null || $enrollment->payment_due_date !== null) {
-            return;
-        }
-
-        $enrollment->forceFill([
-            'payment_due_date' => now()->subDays(4)->toDateString(),
-        ])->save();
     }
 }

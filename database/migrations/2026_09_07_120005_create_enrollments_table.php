@@ -15,10 +15,15 @@ return new class extends Migration
      * percentage and completion score becomes wrong. Every enrolment-owned
      * table resolves isolation through this row.
      *
-     * payment_due_date is client decision S3: SOW section 7 reminder 7 fires on a
-     * payment due date while section 8 excludes all payment features. One nullable
-     * date is the narrowest structure that satisfies the reminder without
-     * building the excluded feature. No instalment table exists either way.
+     * payment_due_date was client decision S3: reminder 7 fired on a payment due
+     * date while the same SOW excluded payment features, and one nullable date
+     * was the narrowest structure that satisfied it.
+     *
+     * THAT COLUMN NO LONGER EXISTS. The client has since confirmed that this
+     * application tracks no payment information at all, and
+     * 2026_10_10_090000_drop_payment_due_date_from_enrollments_table removes it.
+     * The definition below is left as it was so the migration history replays
+     * truthfully; nothing reads the column between the two migrations.
      */
     public function up(): void
     {

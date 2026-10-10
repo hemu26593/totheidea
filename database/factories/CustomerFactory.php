@@ -23,7 +23,7 @@ class CustomerFactory extends Factory
         return [
             'name' => fake()->company(),
             'code' => 'C-'.fake()->unique()->bothify('####'),
-            'status' => 'prospect',
+            'status' => 'active',
         ];
     }
 

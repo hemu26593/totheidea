@@ -23,15 +23,16 @@ use Livewire\Component;
  * model. Status is not a form field: it moves through
  * CustomerService::activate and ::archive, which carry the audit entries.
  *
- * Batch is offered on creation only. Every customer here is already a
- * confirmed customer, so choosing a batch is the whole of programme entry -
- * it activates them, with no payment step and no separate enrol action. The
- * enrolment row this produces is an internal ownership record, never a
- * workflow the operator has to drive.
+ * Batch is chosen on creation, and is required. Every customer here is already
+ * a confirmed customer in a batch, so this screen is the whole of programme
+ * entry: no payment, no activation, no separate enrol action, and no second
+ * screen that finishes the job. The enrolment row it produces is an internal
+ * ownership record - twelve tables resolve customer isolation through it -
+ * never a workflow the operator has to drive.
  *
- * Changing which batch an existing customer sits in is a different operation
- * with its own history - withdrawing one run and starting another - so it
- * stays on the Programme screen and is deliberately not an edit field here.
+ * Batch is not an edit field. Moving a business between batches ends one
+ * programme run and starts another, which is a different operation from
+ * correcting a name, and no screen offers it.
  *
  * The contact fields are likewise creation-only, and exist to capture the ONE
  * person a new business is reached through - the primary contact a form link
@@ -103,16 +104,19 @@ class ManageCustomer extends Component
         ];
 
         if ($existing === null) {
-            $rules['batchId'] = ['nullable', 'integer', Rule::exists('batches', 'id')->whereNull('archived_at')];
+            // All three are required because a customer reaching this system is
+            // already confirmed and already in a batch: that IS what being a
+            // customer here means. There is no later step that would supply a
+            // missing batch - no enrolment screen exists - so accepting one
+            // without it would create a record nothing can finish.
+            $rules['batchId'] = ['required', 'integer', Rule::exists('batches', 'id')->whereNull('archived_at')];
 
-            // The same rules the customer's own screen uses, with one
-            // difference: a half-entered contact is refused. The reason this
-            // block exists is to produce somebody a form link can reach, and a
-            // contact with no address reaches nobody - RecipientResolver skips
-            // it. Leaving all three blank is still fine; the contact can be
-            // added later on the customer's screen.
-            $rules['contactName'] = ['nullable', 'string', 'max:150', 'required_with:contactEmail,contactPhone'];
-            $rules['contactEmail'] = ['nullable', 'email', 'max:255', 'required_with:contactName,contactPhone'];
+            // The same contact rules the customer's own screen uses. An address
+            // is required here rather than optional because the point of the
+            // block is somebody a form link can reach, and RecipientResolver
+            // skips a contact that has none.
+            $rules['contactName'] = ['required', 'string', 'max:150'];
+            $rules['contactEmail'] = ['required', 'email', 'max:255'];
             $rules['contactPhone'] = ['nullable', 'string', 'max:20'];
         }
 

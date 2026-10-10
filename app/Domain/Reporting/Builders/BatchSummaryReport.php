@@ -104,14 +104,14 @@ class BatchSummaryReport implements ReportBuilder
     private function participants($enrollments): ReportSection
     {
         if ($enrollments->isEmpty()) {
-            return ReportSection::note('Participants', ['Nobody is enrolled in this batch.']);
+            return ReportSection::note('Participants', ['This batch has no participants.']);
         }
 
         $byStatus = $enrollments->countBy(fn (Enrollment $e): string => (string) $e->status);
 
         return new ReportSection(
             'Participants',
-            ['Enrolment status', 'Count'],
+            ['Participation', 'Count'],
             $byStatus->map(fn (int $count, string $status): array => [$status, (string) $count])
                 ->values()
                 ->all(),

@@ -173,22 +173,20 @@ class PrimaryContactOnCreationTest extends TestCase
     */
 
     #[Test]
-    public function the_contact_block_can_be_left_empty(): void
+    public function a_contact_is_required_because_a_business_nobody_can_reach_is_not_usable(): void
     {
-        // Still a valid way to work: the business is known before the person
-        // is. The customer's own screen adds the contact later.
+        // A form link goes to the primary contact. A business recorded without
+        // one cannot be sent anything, and no screen exists to fix that up
+        // afterwards as part of the programme entry it was meant to complete.
         Livewire::actingAs($this->admin())
             ->test(ManageCustomer::class)
             ->set('name', 'Delta Plastics')
             ->set('code', 'C-DELTA')
             ->set('batchId', $this->batch()->getKey())
             ->call('save')
-            ->assertHasNoErrors();
+            ->assertHasErrors(['contactName' => 'required', 'contactEmail' => 'required']);
 
-        $customer = Customer::query()->where('code', 'C-DELTA')->sole();
-
-        $this->assertSame(0, $customer->contacts()->count());
-        $this->assertSame(1, $customer->enrollments()->count());
+        $this->assertNull(Customer::query()->where('code', 'C-DELTA')->first());
     }
 
     #[Test]
@@ -337,6 +335,7 @@ class PrimaryContactOnCreationTest extends TestCase
             ->set('code', 'C-NEW')
             ->set('contactName', 'New Person')
             ->set('contactEmail', 'new@brandnew.test')
+            ->set('batchId', $this->batch()->getKey())
             ->call('save')
             ->assertHasNoErrors();
 

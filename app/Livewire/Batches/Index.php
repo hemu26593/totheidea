@@ -15,7 +15,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 
 /**
- * Batches: a programme run, and the thing enrolments attach to.
+ * Batches: a programme run, and the thing participants attach to.
  */
 class Index extends Component
 {

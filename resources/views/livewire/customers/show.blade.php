@@ -89,25 +89,19 @@
         </x-ui.card>
     </div>
 
+    {{-- Read-only. A business is put into its batch when it is created, so
+         there is nothing to manage here and no action on a row. --}}
     <x-ui.card title="Programme" subtitle="Batches this business is part of." class="mt-5" :padding="false">
-        <x-slot:actions>
-            <x-ui.button size="sm" :href="route('customers.enrollments', $customer)">Manage</x-ui.button>
-        </x-slot:actions>
-
-        <x-ui.table :headings="['Programme', 'Batch', 'Status', 'Enrolled', '>']" class="rounded-none shadow-none ring-0">
-            @forelse ($enrollments as $enrollment)
-                <tr wire:key="enrollment-{{ $enrollment->id }}">
-                    <x-ui.td class="font-medium">{{ $enrollment->batch?->program?->name ?? '—' }}</x-ui.td>
-                    <x-ui.td muted>{{ $enrollment->batch?->name }}</x-ui.td>
-                    <x-ui.td><x-ui.status-badge :status="$enrollment->status" /></x-ui.td>
-                    <x-ui.td muted>{{ $enrollment->enrolled_at?->format('d M Y') }}</x-ui.td>
-                    <x-ui.td align="right">
-                        <x-ui.button size="sm" :href="route('customers.enrollments', $customer)">Open</x-ui.button>
-                    </x-ui.td>
+        <x-ui.table :headings="['Programme', 'Batch', 'Since']" class="rounded-none shadow-none ring-0">
+            @forelse ($programmes as $programme)
+                <tr wire:key="programme-{{ $programme->id }}">
+                    <x-ui.td class="font-medium">{{ $programme->batch?->program?->name ?? '—' }}</x-ui.td>
+                    <x-ui.td muted>{{ $programme->batch?->name }}</x-ui.td>
+                    <x-ui.td muted>{{ $programme->enrolled_at?->format('d M Y') }}</x-ui.td>
                 </tr>
             @empty
-                <x-ui.empty-row :colspan="5" title="No batch assigned yet"
-                                description="Assign this business to a batch to start the programme." />
+                <x-ui.empty-row :colspan="3" title="No batch recorded"
+                                description="Customers are added straight into a batch, so this is an older record from before that rule." />
             @endforelse
         </x-ui.table>
     </x-ui.card>

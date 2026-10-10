@@ -258,7 +258,7 @@ class DemoContentSeeder extends Seeder
         $plan = [
             ['session_upcoming', NotificationDispatch::STATUS_SENT, -3],
             ['assignment_due', NotificationDispatch::STATUS_SENT, -2],
-            ['payment_due', NotificationDispatch::STATUS_PENDING, 0],
+            ['session_upcoming', NotificationDispatch::STATUS_PENDING, 1],
             ['assignment_overdue', NotificationDispatch::STATUS_PENDING, 0],
             ['dashboard_missed_three_days', NotificationDispatch::STATUS_FAILED, -1],
             ['intake_incomplete', NotificationDispatch::STATUS_SENT, -5],

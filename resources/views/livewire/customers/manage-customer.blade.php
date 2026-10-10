@@ -1,6 +1,6 @@
 <div>
     <x-ui.page-header :title="$customer ? 'Edit customer' : 'New customer'"
-                      :subtitle="$customer ? $customer->name : 'A confirmed customer. Enter who we deal with and choose their batch, and they are ready for the programme on save.'"
+                      :subtitle="$customer ? $customer->name : 'A confirmed customer. Enter who we deal with and which batch they are in — they are ready for the programme on save.'"
                       :breadcrumbs="array_filter([
                           'Customers' => route('customers.index'),
                           ($customer?->name ?? 'New') => $customer ? route('customers.show', $customer) : null,
@@ -34,12 +34,12 @@
             <x-ui.card title="Primary contact"
                        subtitle="Who we deal with. Form links and reminders go to this person.">
                 <div class="space-y-4">
-                    <x-ui.field label="Contact name" for="contactName"
+                    <x-ui.field label="Contact name" for="contactName" required
                                 :error="$errors->first('contactName')">
                         <x-ui.input id="contactName" wire:model="contactName" autocomplete="name" />
                     </x-ui.field>
 
-                    <x-ui.field label="Email" for="contactEmail"
+                    <x-ui.field label="Email" for="contactEmail" required
                                 hint="Where the form link is sent."
                                 :error="$errors->first('contactEmail')">
                         <x-ui.input id="contactEmail" type="email" wire:model="contactEmail" autocomplete="email" />
@@ -51,34 +51,37 @@
                         <x-ui.input id="contactPhone" wire:model="contactPhone" autocomplete="tel" />
                     </x-ui.field>
 
-                    <p class="text-xs text-ink-3">
-                        You can leave this empty and add the contact later, but a form link cannot be
-                        sent until the business has one with an email address.
-                    </p>
                 </div>
             </x-ui.card>
         @endif
 
-        {{-- Programme entry, in one step. Choosing a batch here makes the
-             business an active participant on save: there is no payment
-             confirmation and no separate enrolment action to follow. --}}
-        @if (! $customer && $batches->isNotEmpty())
+        {{-- Programme entry, in one step. The batch is required: a customer
+             here is already in one, and nothing downstream would supply a
+             missing batch later. --}}
+        @if (! $customer)
             <x-ui.card title="Programme">
-                <x-ui.field label="Batch" for="batchId"
-                            hint="The business becomes an active participant in this batch as soon as you save. You can leave it unset and assign a batch later."
-                            :error="$errors->first('batchId')">
-                    <x-ui.select id="batchId" wire:model="batchId">
-                        <option value="">Assign a batch later</option>
-                        @foreach ($batches as $batch)
-                            <option value="{{ $batch->id }}">
-                                {{ $batch->program?->name ? $batch->program->name.' — ' : '' }}{{ $batch->name }}
-                                @if ($batch->starts_on)
-                                    ({{ $batch->starts_on->format('d M Y') }})
-                                @endif
-                            </option>
-                        @endforeach
-                    </x-ui.select>
-                </x-ui.field>
+                @if ($batches->isEmpty())
+                    <x-ui.alert tone="warning">
+                        There is no batch available to put this business into. Create one on the
+                        Batches screen first, then add the customer.
+                    </x-ui.alert>
+                @else
+                    <x-ui.field label="Batch" for="batchId" required
+                                hint="The business is an active participant in this batch as soon as you save."
+                                :error="$errors->first('batchId')">
+                        <x-ui.select id="batchId" wire:model="batchId">
+                            <option value="">Choose a batch…</option>
+                            @foreach ($batches as $batch)
+                                <option value="{{ $batch->id }}">
+                                    {{ $batch->program?->name ? $batch->program->name.' — ' : '' }}{{ $batch->name }}
+                                    @if ($batch->starts_on)
+                                        ({{ $batch->starts_on->format('d M Y') }})
+                                    @endif
+                                </option>
+                            @endforeach
+                        </x-ui.select>
+                    </x-ui.field>
+                @endif
             </x-ui.card>
         @endif
 

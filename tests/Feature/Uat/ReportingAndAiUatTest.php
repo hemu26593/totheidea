@@ -465,9 +465,12 @@ class ReportingAndAiUatTest extends TestCase
         );
         $this->assertSame(2, $metrics['Customers']['value'], 'The archived customer is excluded.');
 
+        // The tile is labelled for the operator - participants in a running
+        // batch - while the figure behind it is still the enrolment count,
+        // because enrolment is how participation is recorded internally.
         $this->assertSame(
             Enrollment::query()->where('status', 'enrolled')->count(),
-            $metrics['Active enrolments']['value'],
+            $metrics['Active participants']['value'],
         );
 
         $this->assertSame(

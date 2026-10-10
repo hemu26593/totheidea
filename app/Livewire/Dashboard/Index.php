@@ -79,9 +79,9 @@ class Index extends Component
             ];
 
             $metrics[] = [
-                'label' => 'Active enrolments',
+                'label' => 'Active participants',
                 'value' => Enrollment::query()->where('status', 'enrolled')->count(),
-                'hint' => 'Currently enrolled',
+                'hint' => 'In a running batch',
             ];
         }
 
@@ -153,7 +153,7 @@ class Index extends Component
             $metrics[] = [
                 'label' => 'Dashboards missing today',
                 'value' => $this->customersWithoutTodaysMmd(),
-                'hint' => 'Enrolled customers with no MMD entry today',
+                'hint' => 'Active customers with no MMD entry today',
                 'tone' => 'warning',
             ];
         }
@@ -162,7 +162,7 @@ class Index extends Component
     }
 
     /**
-     * Enrolled customers that recorded nothing on the MMD today.
+     * Active customers that recorded nothing on the MMD today.
      *
      * GRAIN-AGNOSTIC. It asks only whether ANY row exists for the customer on
      * the date, which is true under either reading of the unresolved B1

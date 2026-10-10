@@ -109,7 +109,6 @@ class NotificationTriggerTest extends TestCase
             'assignment_overdue',
             'daily_dashboard_missing',
             'dashboard_missed_three_days',
-            'payment_due',
             'attendance_below_threshold',
             'weekly_batch_summary',
         ], $keys);
@@ -397,32 +396,27 @@ class NotificationTriggerTest extends TestCase
         $this->assertSame(3, (int) config('notifications.timing.dashboard_missed_days'));
     }
 
-    // --- 7. Payment due -----------------------------------------------------
+    // --- 7. Payment due: removed ---------------------------------------------
 
     #[Test]
-    public function trigger_seven_fires_on_the_date_then_every_second_day(): void
+    public function there_is_no_payment_trigger_and_nothing_left_to_feed_one(): void
     {
-        [, , $enrollment] = $this->enrolledBusiness();
-        $enrollment->forceFill(['payment_due_date' => '2026-10-01'])->save();
+        // The client confirmed this application tracks no payment information,
+        // so trigger 7 and the column it read were removed together. Asserted
+        // rather than simply deleted: a reminder that quietly came back would
+        // start mailing businesses about money this system does not track.
+        $keys = array_map(
+            fn (NotificationTrigger $t): string => $t->key(),
+            $this->scheduler->triggers(),
+        );
 
-        foreach ([0 => true, 1 => false, 2 => true, 3 => false, 4 => true] as $day => $expected) {
-            $asOf = CarbonImmutable::parse('2026-10-01')->addDays($day)->toDateString();
-            $found = $this->candidates(Triggers\PaymentDueTrigger::class, $asOf);
+        $this->assertNotContains('payment_due', $keys);
+        $this->assertFalse(Schema::hasColumn('enrollments', 'payment_due_date'));
 
-            $this->assertSame($expected, $found !== [], "Day {$day} should ".($expected ? '' : 'not ').'fire.');
-        }
-    }
-
-    #[Test]
-    public function trigger_seven_is_inert_when_no_payment_date_is_tracked(): void
-    {
-        // [S3] - whether the platform tracks payment dates at all is open. An
-        // enrolment with no date simply never qualifies, so if the answer is
-        // "no" the trigger is inert without a code change.
-        [, , $enrollment] = $this->enrolledBusiness();
-        $this->assertNull($enrollment->payment_due_date);
-
-        $this->assertCount(0, $this->candidates(Triggers\PaymentDueTrigger::class, '2026-10-01'));
+        // Asserted against the filesystem rather than class_exists(), which
+        // answers from whatever the autoloader last cached and would pass or
+        // fail on a stale classmap rather than on what the repository holds.
+        $this->assertFileDoesNotExist(app_path('Domain/Notifications/Triggers/PaymentDueTrigger.php'));
     }
 
     // --- 9. Weekly batch summary --------------------------------------------

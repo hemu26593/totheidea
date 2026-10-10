@@ -11,7 +11,6 @@ use App\Domain\Trackers\DayPlanService;
 use App\Livewire\Customers\ActionPlan;
 use App\Livewire\Customers\DayPlan;
 use App\Livewire\Customers\Documents;
-use App\Livewire\Customers\Enrollments;
 use App\Livewire\Customers\Notes;
 use App\Livewire\Customers\Reports as CustomerReports;
 use App\Livewire\Customers\Show;
@@ -69,19 +68,6 @@ class CustomerIsolationTest extends TestCase
             ->assertNotFound();
 
         $this->assertFalse((bool) $theirContact->fresh()->is_primary);
-    }
-
-    #[Test]
-    public function an_enrolment_belonging_to_another_business_cannot_be_withdrawn(): void
-    {
-        $theirEnrolment = $this->enrolment($this->theirs);
-
-        Livewire::actingAs($this->admin())
-            ->test(Enrollments::class, ['customer' => $this->mine])
-            ->call('startWithdrawal', $theirEnrolment->getKey())
-            ->assertNotFound();
-
-        $this->assertSame('enrolled', $theirEnrolment->fresh()->status);
     }
 
     #[Test]
