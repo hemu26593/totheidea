@@ -61,9 +61,24 @@
                             $value = $answers[$question->id] ?? null;
                             $chosen = (array) ($selections[$question->id] ?? []);
                             $field = 'q-'.$question->id;
+                            $condition = ($conditions ?? [])[$question->id] ?? null;
                         @endphp
 
-                        <div class="border-b border-line pb-4 last:border-0 last:pb-0">
+                        {{--
+                            A conditional question carries what reveals it, so the
+                            page can toggle it as the participant answers. It is
+                            hidden, not removed, so it needs no round trip - and
+                            without JavaScript it simply shows the state the server
+                            last saw: tick Other, save, and it is there. Either way
+                            an answer that turns out not to apply is cleared
+                            server-side by the form engine, not by this markup.
+                        --}}
+                        <div class="border-b border-line pb-4 last:border-0 last:pb-0"
+                             @if ($condition)
+                                 data-reveals-question="{{ $condition['question_id'] }}"
+                                 data-reveals-on="{{ implode(',', $condition['option_ids']) }}"
+                                 @if (! $condition['visible']) hidden @endif
+                             @endif>
                             <label for="{{ $field }}" class="block text-sm font-medium text-ink-2">
                                 {{ $question->label }}
                                 @if ($question->is_required)
@@ -194,6 +209,33 @@
 
             if (!form) {
                 return;
+            }
+
+            // Conditional questions. Each dependent block names the question
+            // that reveals it and the option ids that do so; nothing about any
+            // particular form is written here, and nothing is validated here.
+            var dependents = form.querySelectorAll('[data-reveals-question]');
+
+            function applyConditions() {
+                dependents.forEach(function (block) {
+                    var controlling = block.getAttribute('data-reveals-question');
+                    var revealing = (block.getAttribute('data-reveals-on') || '').split(',');
+                    var inputs = form.querySelectorAll('[name="selections[' + controlling + '][]"]');
+                    var revealed = false;
+
+                    inputs.forEach(function (input) {
+                        if (input.checked && revealing.indexOf(input.value) !== -1) {
+                            revealed = true;
+                        }
+                    });
+
+                    block.hidden = !revealed;
+                });
+            }
+
+            if (dependents.length) {
+                form.addEventListener('change', applyConditions);
+                applyConditions();
             }
 
             // Record which button was pressed BEFORE anything is disabled.

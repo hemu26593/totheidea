@@ -19,6 +19,19 @@
         <x-ui.alert tone="danger" class="mb-4">{{ $message }}</x-ui.alert>
     @enderror
 
+    {{-- The questionnaire link issued when this business was entered. Flashed,
+         so it survives exactly the redirect that brought us here and is then
+         gone: the plaintext token is stored nowhere and cannot be shown twice.
+         Issuing a fresh one is always available from the Forms tab. --}}
+    @if ($issuedLink = session('issued_link'))
+        <x-ui.copy-link class="mb-4"
+                        :url="$issuedLink['url']"
+                        :form="$issuedLink['form'] ?? null"
+                        :contact="$issuedLink['contact'] ?? null"
+                        :expires-at="$issuedLink['expires_at'] ?? null"
+                        :delivered="$issuedLink['delivered'] ?? false" />
+    @endif
+
     <div class="grid gap-5 lg:grid-cols-3">
         <x-ui.card title="Overview" class="lg:col-span-1">
             <dl class="divide-y divide-line">

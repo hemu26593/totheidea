@@ -39,7 +39,10 @@ use RuntimeException;
  */
 class SubmissionService
 {
-    public function __construct(private readonly AuditLogger $audit) {}
+    public function __construct(
+        private readonly AuditLogger $audit,
+        private readonly QuestionVisibility $visibility,
+    ) {}
 
     /**
      * Start a draft against an explicit version.
@@ -129,6 +132,57 @@ class SubmissionService
         });
     }
 
+    /**
+     * Clear answers to questions the participant is no longer being shown.
+     *
+     * A conditional question whose condition is unmet was not asked, so a
+     * value left behind from an earlier choice is not an answer - it is a
+     * sentence the participant retracted. Left in place it would reach a
+     * consultant, a report and a score as though it had been given.
+     *
+     * Clearing rather than deleting the row: the shape of every other write
+     * here is "replace this question's answer", and a null answer and a
+     * missing answer already mean the same thing to every reader.
+     *
+     * Only conditional questions are considered, so a form with no conditions
+     * does no work and cannot be affected.
+     */
+    public function pruneHiddenAnswers(FormSubmission $submission): int
+    {
+        $answers = $submission->answers()->with('answerOptions')->get();
+        $selections = $this->visibility->selectionsFrom($answers);
+
+        $conditional = $submission->formVersion
+            ?->questions()
+            ->whereNotNull('visible_when')
+            ->get() ?? collect();
+
+        $cleared = 0;
+
+        foreach ($conditional as $question) {
+            if ($this->visibility->isVisible($question, $selections)) {
+                continue;
+            }
+
+            $answer = $answers->firstWhere('question_id', $question->getKey());
+
+            if ($answer === null || $this->isEmptyAnswer($answer)) {
+                continue;
+            }
+
+            $this->answer($submission, $question, [
+                'value_text' => null,
+                'value_number' => null,
+                'value_date' => null,
+                'value_boolean' => null,
+            ]);
+
+            $cleared++;
+        }
+
+        return $cleared;
+    }
+
     public function submit(FormSubmission $submission, ?User $actor = null, ?AccessGrant $grant = null): FormSubmission
     {
         return DB::transaction(function () use ($submission, $actor, $grant): FormSubmission {
@@ -180,6 +234,15 @@ class SubmissionService
                 'customer '.$submission->customer_id,
             );
         }
+    }
+
+    private function isEmptyAnswer(Answer $answer): bool
+    {
+        return $answer->value_text === null
+            && $answer->value_number === null
+            && $answer->value_date === null
+            && $answer->value_boolean === null
+            && $answer->answerOptions->isEmpty();
     }
 
     private function assertVersionIsAnswerable(FormVersion $version): void

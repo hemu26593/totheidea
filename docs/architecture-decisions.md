@@ -833,3 +833,96 @@ nothing.
 The create-customer screen now refuses when no batch exists, pointing at the
 Batches screen. That is a real ordering requirement, not a defect: a programme
 with no batch has nowhere to put a participant.
+
+---
+
+## ADR-018: The participant questionnaire, and handing a form link to the operator
+
+**Status:** Accepted
+**Date:** 2026-10-13
+
+### Context
+
+The client's own instrument - the Participant Business Analysis Questionnaire by
+Raajul Parekh, twelve sections and forty-nine questions - has to exist in the
+application as data, be given to every new participant, and be completable by a
+business with no account.
+
+Two existing decisions stood in the way of the last part. `FormLinkService` was
+written to email the link and deliberately NOT to return the URL, on the
+grounds that nothing upstream had any use for it and returning it would invite
+it into a log or a view. And `MAIL_MAILER` defaults to `log` in this project,
+with no transport configured anywhere - so "email the link" currently means
+"write the link into `laravel.log`", which no business will ever read.
+
+The result was a workflow that looked complete and delivered nothing.
+
+### Decision
+
+**The questionnaire is reference content, not demonstration data.**
+`ParticipantQuestionnaireSeeder` publishes it through the real form engine -
+`FormBuilderService` for every row, `FormPublishingService` for the version -
+and is registered in `DatabaseSeeder` alongside roles and the first
+administrator. It is idempotent in the strongest available sense: a published
+version is immutable because submissions bind to it as the record of what was
+asked, so an already-published questionnaire is left exactly as it is. Changing
+the instrument means authoring the next version on the Form templates screen.
+
+**Nothing on it is scored.** Its last section is titled "Business Readiness
+Score", and its questions are categorical with no numeric mapping defined
+anywhere by the client. The template is unscored, no question carries a
+`max_score` and no option carries a `score_value`. Section 12 is a heading
+carried verbatim, exactly as G / C / M is.
+
+**Only Section 1 is required.** The source document marks nothing as mandatory.
+Those eight answers are what attribute the rest to a business; requiring more
+would be inventing a rule and would let a blank field block a submission.
+
+**Association with a customer is the scoped link, and nothing else.** The
+questionnaire is one global template answered by every business, so there is no
+per-customer assignment row to create - what makes it *this* business's form is
+an access grant for (their enrolment, the published version, `complete_form`).
+That grant is the association, the authority and the audit entry at once.
+`ParticipantQuestionnaire::assign()` issues it when a customer is entered into a
+batch, and refuses to issue a second while one is live, so editing a customer or
+re-running a seeder cannot produce a duplicate.
+
+**The issued URL is now returned to the operator who issued it, once.** This
+reverses the "never returned" rule above, and the reasoning that supported it:
+with no mail transport, a link nobody can copy is a link nobody can send. The
+plaintext token still exists only in memory for one response, still reaches no
+row, no log, no job payload and no redirect of its own, and the database still
+holds only its SHA-256 hash. `FormLinkService::issue()` returns it inside
+`IssuedLink`; `send()` keeps its old behaviour for the Send button; and
+`deliveryIsConfigured()` decides whether a message is also pushed out, treating
+`log` and `array` as what they are - not transports.
+
+**`questions.visible_when` finally has an evaluator.** The document asks which
+platform performs best and then, only when the answer is Other, which platform
+that is. `QuestionVisibility` reads a two-field rule (one controlling question,
+the option values that reveal this one) and nothing more: it is not an
+expression language and it is never executed. A question whose condition is
+unmet is not shown, is never counted as an outstanding required answer, and has
+any answer it already holds cleared by `SubmissionService::pruneHiddenAnswers()`
+- because a retracted answer that survives into a report is worse than no answer
+at all. A malformed or dangling rule shows the question, since dropping a
+question from an instrument somebody is assessed on is the worse failure.
+
+### Consequences
+
+`CustomerService::createInBatch()` now returns `ProgrammeEntry` rather than
+`Customer`: the action produces a link that cannot be fetched back afterwards,
+so it has to come out with the result. The questionnaire link is issued AFTER
+the customer's transaction commits - a message must not go out for a customer
+that was then rolled back, and a refusal must not destroy a customer who is
+otherwise complete. A refusal is reported on the result instead, and the
+operator sees what did not happen.
+
+A deployment that has not been seeded has no questionnaire. That is a
+legitimate state and not a precondition for a customer: entry still succeeds,
+and the screen says why no link was created.
+
+`demo:reset` clears `form_templates`, so the demo pipeline republishes the
+questionnaire too. The demonstration dataset therefore contains six forms -
+five demonstration instruments and the client's real one - and its customers
+hold genuinely issued links rather than fabricated tokens.

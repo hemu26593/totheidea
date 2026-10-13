@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Livewire\Customers;
 
 use App\Domain\Customers\CustomerService;
+use App\Domain\Customers\ProgrammeEntry;
+use App\Domain\Forms\ParticipantQuestionnaire;
 use App\Livewire\Concerns\ReportsDomainFailures;
 use App\Models\Batch;
 use App\Models\Customer;
@@ -39,6 +41,12 @@ use Livewire\Component;
  * goes to. Managing contacts after that (adding more, changing which is
  * primary, archiving, consent) stays on the customer's own screen, which
  * already does all of it; nothing here duplicates that.
+ *
+ * SAVING ALSO HANDS OVER THE QUESTIONNAIRE LINK. The domain does the work -
+ * CustomerService enters the business and ParticipantQuestionnaire issues the
+ * link - and this screen's part is to show the URL once, because the plaintext
+ * token cannot be recovered afterwards (ADR-018). It is flashed, so it lives
+ * for exactly the redirect that follows and is then gone.
  */
 class ManageCustomer extends Component
 {
@@ -122,21 +130,34 @@ class ManageCustomer extends Component
 
         $data = $this->validate($rules);
         $batch = $this->chosenBatch($existing);
+        $entry = null;
 
-        $saved = $this->runGuarded(function () use ($customers, $existing, $data, $batch): void {
-            $existing === null
-                ? $this->customerId = (int) $customers->createInBatch(
-                    ['name' => $data['name'], 'code' => $data['code']],
-                    $batch,
-                    $this->contactAttributes(),
-                    auth()->user(),
-                )->getKey()
-                : $customers->update($existing, ['name' => $data['name'], 'code' => $data['code']], auth()->user());
+        $saved = $this->runGuarded(function () use ($customers, $existing, $data, $batch, &$entry): void {
+            if ($existing !== null) {
+                $customers->update($existing, ['name' => $data['name'], 'code' => $data['code']], auth()->user());
+
+                return;
+            }
+
+            $entry = $customers->createInBatch(
+                ['name' => $data['name'], 'code' => $data['code']],
+                $batch,
+                $this->contactAttributes(),
+                auth()->user(),
+            );
+
+            $this->customerId = (int) $entry->customer->getKey();
         }, $this->outcomeMessage($existing, $batch));
 
-        if ($saved) {
-            $this->redirectRoute('customers.show', $this->customerId, navigate: false);
+        if (! $saved) {
+            return;
         }
+
+        if ($entry !== null) {
+            $this->reportQuestionnaireOutcome($entry);
+        }
+
+        $this->redirectRoute('customers.show', $this->customerId, navigate: false);
     }
 
     public function render(): View
@@ -148,6 +169,53 @@ class ManageCustomer extends Component
             'batches' => $existing === null ? $this->assignableBatches() : new Collection,
         ])->layout('components.layouts.app', [
             'title' => $existing === null ? 'New customer' : 'Edit customer',
+        ]);
+    }
+
+    /**
+     * Say what happened to the questionnaire link, including when nothing did.
+     *
+     * The URL is flashed, which means it lives in the session for exactly one
+     * render of the customer's screen and is then gone - the same lifetime the
+     * plaintext token has in memory. It is never written to a row, a log or a
+     * redirect of its own.
+     */
+    private function reportQuestionnaireOutcome(ProgrammeEntry $entry): void
+    {
+        if ($entry->questionnaireProblem !== null) {
+            session()->flash(
+                'warning',
+                'The customer was created, but the questionnaire link could not be issued: '
+                .$entry->questionnaireProblem,
+            );
+
+            return;
+        }
+
+        $questionnaire = app(ParticipantQuestionnaire::class);
+        $link = $entry->questionnaireLink;
+
+        if ($link === null) {
+            // Nothing was issued because there is nothing to issue. Worth
+            // saying: an operator who expects a link should know why there
+            // isn't one, rather than assume the screen forgot.
+            if ($entry->enrollment !== null && ! $questionnaire->isAvailable()) {
+                session()->flash(
+                    'warning',
+                    'No participant questionnaire is published yet, so no form link was created. '
+                    .'Once it is published, send the link from this business\'s Forms tab.',
+                );
+            }
+
+            return;
+        }
+
+        session()->flash('issued_link', [
+            'url' => $link->url,
+            'form' => (string) ($questionnaire->template()?->name ?? 'Questionnaire'),
+            'contact' => (string) ($link->contact?->email ?? ''),
+            'expires_at' => $link->expiresAt()?->format('d M Y'),
+            'delivered' => $link->delivered,
         ]);
     }
 

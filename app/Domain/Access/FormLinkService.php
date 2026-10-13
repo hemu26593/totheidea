@@ -53,18 +53,42 @@ class FormLinkService
     /**
      * Issue a link for one of this business's forms and email it to them.
      *
+     * Kept as it was: the Forms screen's "Send form link" button means send,
+     * whatever the mail transport is, and the contact it reached is what the
+     * screen reports. Everything it does now lives in issue(), so there is one
+     * implementation of "what a form link is" and not two.
+     */
+    public function send(Enrollment $enrollment, FormTemplate $template, User $actor): CustomerContact
+    {
+        // issue() refuses a business with no reachable contact, so the contact
+        // on the result is never null on this path.
+        return $this->issue($enrollment, $template, $actor, deliver: true)->contact;
+    }
+
+    /**
+     * Issue a link, and hand the URL back to the operator who asked for it.
+     *
      * The pair (enrolment, published form version) is what a link is FOR, and
      * it is what the grant is scoped to - not a submission. A submission may not
      * exist yet: the business creates it by opening the link, which is what
      * makes the answers theirs (source = external_grant, created_by = NULL)
      * rather than a record staff started on their behalf.
      *
-     * Returns the contact it reached so the caller can say so. The URL and the
-     * token are deliberately not returned: nothing upstream has any use for
-     * them, and handing them back would invite them into a log or a view.
+     * WHY THE URL IS RETURNED (ADR-018). It used to be deliberately withheld,
+     * on the grounds that nothing upstream had any use for it. That stopped
+     * being true: this deployment has no mail transport configured, so the
+     * operator has to be able to copy the link and send it themselves. The
+     * plaintext still exists only in memory, for one response, and still
+     * reaches no log, no row and no job payload - see IssuedLink.
+     *
+     * $deliver null means "email it if there is anything to email with".
      */
-    public function send(Enrollment $enrollment, FormTemplate $template, User $actor): CustomerContact
-    {
+    public function issue(
+        Enrollment $enrollment,
+        FormTemplate $template,
+        User $actor,
+        ?bool $deliver = null,
+    ): IssuedLink {
         $customer = $this->customerFor($enrollment);
 
         // Checked before the version is resolved, so "that form is not yours"
@@ -103,18 +127,37 @@ class FormLinkService
             );
         });
 
-        // Outside the transaction: an SMTP failure must not roll back a grant
-        // that was genuinely issued and audited, and the caller is told about
-        // the failure either way.
-        Mail::to((string) $contact->email)->send(new FormLinkMessage(
-            customerName: (string) $customer->name,
-            contactName: (string) ($contact->name ?? ''),
-            formName: (string) $template->name,
-            url: $this->urlFor($issued->plaintextToken),
-            expiresAt: $issued->grant->expires_at,
-        ));
+        $url = $this->urlFor($issued->plaintextToken);
+        $deliver ??= $this->deliveryIsConfigured();
 
-        return $contact;
+        if ($deliver) {
+            // Outside the transaction: an SMTP failure must not roll back a
+            // grant that was genuinely issued and audited, and the caller is
+            // told about the failure either way.
+            Mail::to((string) $contact->email)->send(new FormLinkMessage(
+                customerName: (string) $customer->name,
+                contactName: (string) ($contact->name ?? ''),
+                formName: (string) $template->name,
+                url: $url,
+                expiresAt: $issued->grant->expires_at,
+            ));
+        }
+
+        return new IssuedLink($issued->grant, $url, $contact, $deliver);
+    }
+
+    /**
+     * Whether this deployment can actually send the message itself.
+     *
+     * `log` and `array` are not transports: one writes the mail to a file and
+     * the other keeps it in memory for tests. Treating either as delivery is
+     * how an operator ends up believing a business was emailed a link that
+     * only ever reached laravel.log. When there is nothing to send with, the
+     * link is issued anyway and the operator copies it.
+     */
+    public function deliveryIsConfigured(): bool
+    {
+        return ! in_array((string) config('mail.default'), ['log', 'array', ''], true);
     }
 
     /**
@@ -154,6 +197,27 @@ class FormLinkService
             ->with('customerContact:id,name,email')
             ->latest('id')
             ->first();
+    }
+
+    /**
+     * Whether this business already holds a link to this form that would open
+     * right now.
+     *
+     * This is what makes issuing idempotent for a caller that must not create
+     * a second link - re-saving a customer, for instance. It answers from the
+     * grant table, which is the only record of a link there is.
+     */
+    public function hasActiveLink(Enrollment $enrollment, FormTemplate $template): bool
+    {
+        $version = $template->publishedVersion();
+
+        if ($version === null) {
+            return false;
+        }
+
+        $customer = $this->customerFor($enrollment);
+
+        return $this->activeGrantsFor($customer, $enrollment, $version)->isNotEmpty();
     }
 
     /**

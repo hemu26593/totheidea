@@ -18,12 +18,26 @@
         <x-ui.alert tone="danger" class="mb-4">{{ $message }}</x-ui.alert>
     @enderror
 
+    {{-- A link that has just been issued. Flashed rather than held as a
+         property: the plaintext token should live for one render, not for the
+         rest of the component's life on the page. --}}
+    @if ($issuedLink = session('issued_link'))
+        <x-ui.copy-link class="mb-4"
+                        :url="$issuedLink['url']"
+                        :form="$issuedLink['form'] ?? null"
+                        :contact="$issuedLink['contact'] ?? null"
+                        :expires-at="$issuedLink['expires_at'] ?? null"
+                        :delivered="$issuedLink['delivered'] ?? false" />
+    @endif
+
     {{-- What this business can be sent. One row per (enrolment, published
          form): that pair is what a link is for and what the grant is scoped to.
          Every button here re-checks the policy and the workspace server-side;
          hiding one is convenience, never authorization. --}}
     <x-ui.card title="Send a form to this business"
-               subtitle="A link opens one form, expires, and is not a login. The business's own contact receives it."
+               :subtitle="$canEmail
+                   ? 'A link opens one form, expires, and is not a login. The business\'s own contact receives it.'
+                   : 'A link opens one form, expires, and is not a login. No mail transport is configured here, so copy the link and send it to the business yourself.'"
                class="mb-5">
         <x-ui.table :headings="['Form', 'Version', 'Batch', 'Customer link', '>']" class="shadow-none ring-0">
             @forelse ($sendable as $row)
@@ -75,11 +89,25 @@
                                          The service revokes any live grant before issuing
                                          anyway, so even a race leaves exactly one live link. --}}
                                     <x-ui.button size="sm"
-                                                 :variant="$linkIsLive ? 'secondary' : 'primary'"
+                                                 variant="secondary"
                                                  wire:click="sendFormLink({{ $row->enrollment->id }}, {{ $row->template->id }})"
                                                  wire:loading.attr="disabled"
                                                  wire:target="sendFormLink({{ $row->enrollment->id }}, {{ $row->template->id }})">
                                         {{ $grant ? 'Resend form link' : 'Send form link' }}
+                                    </x-ui.button>
+
+                                    {{-- Issue and show, rather than issue and email: the
+                                         action an operator needs when there is no mail
+                                         transport, which is the default here. Authorized
+                                         identically to sending - it mints the same
+                                         capability - so it is the primary action only
+                                         when emailing cannot work. --}}
+                                    <x-ui.button size="sm"
+                                                 :variant="($linkIsLive || $canEmail) ? 'secondary' : 'primary'"
+                                                 wire:click="copyFormLink({{ $row->enrollment->id }}, {{ $row->template->id }})"
+                                                 wire:loading.attr="disabled"
+                                                 wire:target="copyFormLink({{ $row->enrollment->id }}, {{ $row->template->id }})">
+                                        {{ $grant ? 'Get a fresh link' : 'Get link to copy' }}
                                     </x-ui.button>
                                 @endif
                             @endcan

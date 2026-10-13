@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace App\Domain\Customers;
 
+use App\Domain\Forms\ParticipantQuestionnaire;
 use App\Domain\Programme\EnrollmentService;
 use App\Enums\AuditAction;
 use App\Models\Batch;
 use App\Models\Customer;
+use App\Models\Enrollment;
 use App\Models\User;
 use App\Services\AuditLogger;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
+use RuntimeException;
 
 /**
  * All write operations on customers.
@@ -25,11 +29,13 @@ class CustomerService
         private readonly AuditLogger $audit,
         private readonly EnrollmentService $enrollments,
         private readonly CustomerContactService $contacts,
+        private readonly ParticipantQuestionnaire $questionnaire,
     ) {}
 
     /**
      * Bring a customer into the programme in one action: the business, the
-     * person we deal with, and the batch they are running in.
+     * person we deal with, the batch they are running in, and the
+     * questionnaire link that follows from all three.
      *
      * Every customer reaching this system is already confirmed, so programme
      * entry is one action: the batch assignment IS the activation. There is no
@@ -44,29 +50,60 @@ class CustomerService
      * anybody revisiting the record to add it. There is no second primary
      * mechanism here.
      *
-     * All the writes share one transaction. A customer saved without the batch
-     * or the contact they were entered with is precisely the half-finished
-     * state this exists to remove, so any failure takes the whole thing with
-     * it and the operator sees why.
+     * The three records share ONE transaction. A customer saved without the
+     * batch or the contact they were entered with is precisely the
+     * half-finished state this exists to remove, so any failure takes the
+     * whole thing with it and the operator sees why.
+     *
+     * THE QUESTIONNAIRE LINK IS ISSUED AFTER THAT TRANSACTION COMMITS, on
+     * purpose, and twice over:
+     *
+     *   - issuing it emails a business, when a transport is configured. A
+     *     message that went out for a customer the transaction then rolled
+     *     back cannot be recalled.
+     *   - a refusal here must not destroy a customer who is otherwise
+     *     complete. It is reported on the result instead.
      *
      * @param  array{name: string, code: string}  $attributes
      * @param  array{name: string, email?: string|null, phone_e164?: string|null}|null  $contact
      */
-    public function createInBatch(array $attributes, ?Batch $batch, ?array $contact, User $actor): Customer
+    public function createInBatch(array $attributes, ?Batch $batch, ?array $contact, User $actor): ProgrammeEntry
     {
-        return DB::transaction(function () use ($attributes, $batch, $contact, $actor): Customer {
+        /** @var array{0: Customer, 1: Enrollment|null} $entered */
+        $entered = DB::transaction(function () use ($attributes, $batch, $contact, $actor): array {
             $customer = $this->create($attributes, $actor);
+            $enrollment = null;
 
             if ($contact !== null) {
                 $this->contacts->create($customer, $contact, $actor, primary: true);
             }
 
             if ($batch !== null) {
-                $this->enrollments->enrol($customer, $batch, $actor);
+                $enrollment = $this->enrollments->enrol($customer, $batch, $actor);
             }
 
-            return $customer->fresh();
+            return [$customer->fresh(), $enrollment];
         });
+
+        [$customer, $enrollment] = $entered;
+
+        if ($enrollment === null) {
+            return new ProgrammeEntry($customer, null, null);
+        }
+
+        // A business in a batch is given the participant questionnaire, with
+        // no further action from anybody. The service decides whether there is
+        // one to give and whether this enrolment already holds a live link, so
+        // re-entry cannot produce a second.
+        try {
+            return new ProgrammeEntry(
+                $customer,
+                $enrollment,
+                $this->questionnaire->assign($enrollment, $actor),
+            );
+        } catch (InvalidArgumentException|RuntimeException $e) {
+            return new ProgrammeEntry($customer, $enrollment, null, $e->getMessage());
+        }
     }
 
     /**
