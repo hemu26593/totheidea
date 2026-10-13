@@ -9,10 +9,8 @@ use App\Domain\Forms\FormPublishingService;
 use App\Domain\Forms\SubmissionService;
 use App\Domain\Scoring\ScoringService;
 use App\Enums\QuestionType;
-use App\Livewire\Customers\Enrollments;
 use App\Livewire\Customers\Forms as CustomerForms;
 use App\Livewire\Customers\ManageCustomer;
-use App\Livewire\Customers\Show;
 use App\Livewire\Forms\FormRenderer;
 use App\Models\Batch;
 use App\Models\Customer;
@@ -29,13 +27,13 @@ use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 /**
- * UAT: onboarding a business, and taking it through intake.
+ * UAT: bringing a business into the programme, and taking it through intake.
  *
  * Driven through the SCREENS a staff member actually uses, not through the
  * services behind them - the question this phase answers is whether the
  * workflow holds together, not whether each service works in isolation.
  */
-class OnboardingAndIntakeUatTest extends TestCase
+class ProgrammeEntryAndIntakeUatTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -80,55 +78,41 @@ class OnboardingAndIntakeUatTest extends TestCase
     }
 
     #[Test]
-    public function the_full_onboarding_path_produces_a_coherent_workspace(): void
+    public function programme_entry_is_one_screen_and_the_whole_workspace_follows(): void
     {
         $admin = $this->admin();
+        $batch = $this->batch();
 
-        // 1. Create.
+        // The entire workflow: the business, the person we deal with, and the
+        // batch they are in, in one save. There is no second screen - no
+        // activation, no enrolment, no payment confirmation.
         Livewire::actingAs($admin)
             ->test(ManageCustomer::class)
             ->set('name', 'Alpha Metalworks')
             ->set('code', 'C-ALPHA')
-            ->call('save');
+            ->set('contactName', 'Rakesh Patel')
+            ->set('contactEmail', 'rakesh@alpha.test')
+            ->set('batchId', $batch->getKey())
+            ->call('save')
+            ->assertHasNoErrors();
 
         $alpha = Customer::query()->firstWhere('code', 'C-ALPHA');
 
-        // The client confirmed that every customer reaching this system is
-        // already a final, confirmed customer, so the prospect stage no longer
-        // exists on the way in. This assertion tracks that rule change: a new
-        // customer is active, with no separate activation step to remember.
-        $this->assertSame('active', $alpha->status, 'A new customer is already confirmed.');
+        // Confirmed on arrival.
+        $this->assertSame('active', $alpha->status);
 
-        // 2. Add the contact reminders will go to.
-        Livewire::actingAs($admin)
-            ->test(Show::class, ['customer' => $alpha])
-            ->call('startContact')
-            ->set('contactName', 'Rakesh Patel')
-            ->set('contactRole', 'Managing Director')
-            ->set('contactEmail', 'rakesh@alpha.test')
-            ->set('contactPrimary', true)
-            ->call('saveContact')
-            ->assertHasNoErrors();
+        // Reachable: a form link has somewhere to go.
+        $this->assertSame('Rakesh Patel', $alpha->primaryContact()?->name);
 
-        $this->assertSame('Rakesh Patel', $alpha->fresh()->primaryContact()?->name);
-
-        // 3. Enrol into a batch.
-        $batch = $this->batch();
-
-        Livewire::actingAs($admin)
-            ->test(Enrollments::class, ['customer' => $alpha])
-            ->call('startEnrolment')
-            ->set('batchId', $batch->getKey())
-            ->call('enrol')
-            ->assertHasNoErrors();
-
+        // And in its batch, through the enrolment the operator never saw.
         $enrollment = Enrollment::query()->firstWhere('customer_id', $alpha->getKey());
         $this->assertNotNull($enrollment);
         $this->assertSame('enrolled', $enrollment->status);
+        $this->assertSame((int) $batch->getKey(), (int) $enrollment->batch_id);
 
         // 4. Every workspace tab now opens for this business.
         foreach ([
-            'customers.show', 'customers.enrollments', 'customers.forms', 'customers.sessions',
+            'customers.show', 'customers.forms', 'customers.sessions',
             'customers.assignments', 'customers.attendance', 'customers.day-plan',
             'customers.time-grid', 'customers.mmd', 'customers.fund-plan', 'customers.action-plan',
             'customers.business', 'customers.documents', 'customers.notes', 'customers.reports',
@@ -154,28 +138,13 @@ class OnboardingAndIntakeUatTest extends TestCase
             ->test(ManageCustomer::class)
             ->set('name', 'Another business')
             ->set('code', 'C-ALPHA')
+            ->set('contactName', 'Someone Else')
+            ->set('contactEmail', 'someone@another.test')
+            ->set('batchId', $this->batch()->getKey())
             ->call('save')
             ->assertHasErrors(['code' => 'unique']);
 
         $this->assertSame(1, Customer::query()->where('code', 'C-ALPHA')->count());
-    }
-
-    #[Test]
-    public function a_business_cannot_be_enrolled_into_the_same_batch_twice(): void
-    {
-        $admin = $this->admin();
-        $alpha = Customer::factory()->create();
-        $batch = $this->batch();
-
-        $screen = Livewire::actingAs($admin)->test(Enrollments::class, ['customer' => $alpha]);
-        $screen->call('startEnrolment')->set('batchId', $batch->getKey())->call('enrol');
-
-        // The picker no longer offers it, which is the honest UI answer to a
-        // database constraint that would otherwise produce an error.
-        $screen->call('startEnrolment')
-            ->assertViewHas('availableBatches', fn ($batches) => $batches->isEmpty());
-
-        $this->assertSame(1, Enrollment::query()->count());
     }
 
     /*

@@ -160,7 +160,7 @@
 
     <x-ui.modal :show="$settingTarget" title="Set a target" close="$set('settingTarget', false)">
         <form wire:submit="saveTarget" class="space-y-4">
-            <x-ui.field label="Enrolment" required :error="$errors->first('targetEnrollmentId')">
+            <x-ui.field label="Batch" required :error="$errors->first('targetEnrollmentId')">
                 <x-ui.select wire:model="targetEnrollmentId">
                     <option value="">Choose…</option>
                     @foreach ($enrollments as $enrollment)

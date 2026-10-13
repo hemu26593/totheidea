@@ -24,7 +24,7 @@
             <x-ui.card title="Customers requiring attention"
                        subtitle="A recorded absence, or an intake still in draft."
                        :padding="false">
-                <x-ui.table :headings="['Customer', 'Code', 'Enrolments', '>']" class="rounded-none shadow-none ring-0">
+                <x-ui.table :headings="['Customer', 'Code', 'Batches', '>']" class="rounded-none shadow-none ring-0">
                     @forelse ($attentionCustomers as $customer)
                         <tr wire:key="attention-{{ $customer->id }}">
                             <x-ui.td class="font-medium">{{ $customer->name }}</x-ui.td>

@@ -25,9 +25,9 @@ class EnrollmentService
 {
     public function __construct(private readonly AuditLogger $audit) {}
 
-    public function enrol(Customer $customer, Batch $batch, User $actor, ?string $paymentDueDate = null): Enrollment
+    public function enrol(Customer $customer, Batch $batch, User $actor): Enrollment
     {
-        return DB::transaction(function () use ($customer, $batch, $actor, $paymentDueDate): Enrollment {
+        return DB::transaction(function () use ($customer, $batch, $actor): Enrollment {
             if ($this->alreadyEnrolled($customer, $batch)) {
                 throw new RuntimeException(
                     "Customer {$customer->getKey()} is already enrolled in batch {$batch->getKey()}."
@@ -39,7 +39,6 @@ class EnrollmentService
             $enrollment = new Enrollment([
                 'customer_id' => $customer->getKey(),
                 'batch_id' => $batch->getKey(),
-                'payment_due_date' => $paymentDueDate,
             ]);
             $enrollment->forceFill([
                 'status' => 'enrolled',

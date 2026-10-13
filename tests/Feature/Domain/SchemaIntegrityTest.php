@@ -188,9 +188,17 @@ class SchemaIntegrityTest extends TestCase
     public function the_bmp_migrations_roll_back_and_re_apply(): void
     {
         // A migration that cannot be rolled back is a migration that cannot be
-        // fixed in place on staging. Forty-three steps: forty-two tables
-        // plus A1.
-        $this->artisan('migrate:rollback', ['--step' => 43])->assertSuccessful();
+        // fixed in place on staging.
+        //
+        // The step count is counted, not written down. It used to be the
+        // literal 43 - forty-two tables plus A1 - which meant every later
+        // migration silently made this test assert less than it claimed to.
+        // Everything from the first BMP migration onward is rolled back,
+        // whatever has been added since.
+        $steps = count(glob(database_path('migrations/2026_09_07_*.php')))
+            + count(glob(database_path('migrations/2026_1*_*.php')));
+
+        $this->artisan('migrate:rollback', ['--step' => $steps])->assertSuccessful();
 
         foreach (self::BMP_TABLES as $table) {
             $this->assertFalse(Schema::hasTable($table), "[{$table}] should have been rolled back.");

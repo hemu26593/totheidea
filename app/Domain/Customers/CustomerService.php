@@ -33,9 +33,10 @@ class CustomerService
      *
      * Every customer reaching this system is already confirmed, so programme
      * entry is one action: the batch assignment IS the activation. There is no
-     * payment step and no second "enrol" click - the enrolment row is created
-     * here because twelve tables carry a NOT NULL enrollment_id and resolve
-     * customer isolation through it, not because the user is enrolling anyone.
+     * payment, no onboarding stage and no enrol step anywhere - the enrolment
+     * row is created here because twelve tables carry a NOT NULL
+     * enrollment_id and resolve customer isolation through it, not because
+     * anybody is enrolling anyone. Nothing in the UI creates one (ADR-017).
      *
      * The contact is created through CustomerContactService as the primary
      * one, so it is the same primary contact the rest of the system already
@@ -69,15 +70,13 @@ class CustomerService
     }
 
     /**
-     * A customer is created active, not as a prospect.
+     * A customer is created active.
      *
      * Everyone entered here is already a confirmed customer, so there is no
-     * prospect stage to clear and no separate "activate" click standing
-     * between a new record and the programme. Status is set on the insert
-     * rather than by transitioning immediately afterwards: the customer was
-     * never a prospect, and a two-entry audit trail saying otherwise would be
-     * a fiction. The column keeps its 'prospect' default so rows created
-     * before this rule, and any written outside this service, are unchanged.
+     * stage to clear and no separate "activate" click standing between a new
+     * record and the programme. Status is set on the insert rather than by
+     * transitioning immediately afterwards: the customer was never anything
+     * else, and a two-entry audit trail saying otherwise would be a fiction.
      *
      * @param  array{name: string, code: string}  $attributes
      */

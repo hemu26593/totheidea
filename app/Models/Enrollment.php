@@ -24,7 +24,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * Mass-assignment note: status and the lifecycle timestamps are excluded.
  * Transitions go through EnrollmentService, which audits them.
  */
-#[Fillable(['customer_id', 'batch_id', 'payment_due_date'])]
+#[Fillable(['customer_id', 'batch_id'])]
 class Enrollment extends Model
 {
     /** @use HasFactory<EnrollmentFactory> */
@@ -39,7 +39,6 @@ class Enrollment extends Model
             'enrolled_at' => 'datetime',
             'completed_at' => 'datetime',
             'withdrawn_at' => 'datetime',
-            'payment_due_date' => 'date',
         ];
     }
 

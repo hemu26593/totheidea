@@ -14,7 +14,7 @@
     $tone = match ($value) {
         'active', 'present', 'approved', 'accepted', 'published', 'completed', 'done', 'sent', 'succeeded'
             => 'success',
-        'prospect', 'planned', 'scheduled', 'draft', 'not_started', 'enrolled', 'open', 'pending'
+        'planned', 'scheduled', 'draft', 'not_started', 'enrolled', 'open', 'pending'
             => 'neutral',
         'in_progress', 'released', 'submitted', 'awaiting_approval', 'late', 'carried_forward'
             => 'warning',

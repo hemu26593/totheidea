@@ -1,5 +1,5 @@
 <div>
-    <x-ui.page-header title="Batches" subtitle="A programme run. Enrolments, sessions and assignments hang off a batch.">
+    <x-ui.page-header title="Batches" subtitle="A programme run. Participants, sessions and assignments hang off a batch.">
         <x-slot:actions>
             @can('create', App\Models\Batch::class)
                 <x-ui.button variant="primary" wire:click="startCreate">New batch</x-ui.button>
@@ -24,7 +24,7 @@
         <x-ui.loading target="search,programId" />
     </x-ui.filters>
 
-    <x-ui.table :headings="['Batch', 'Programme', 'Starts', 'Status', 'Enrolled', 'Capacity', '>']">
+    <x-ui.table :headings="['Batch', 'Programme', 'Starts', 'Status', 'Participants', 'Capacity', '>']">
         @forelse ($batches as $batch)
             <tr wire:key="batch-{{ $batch->id }}" class="hover:bg-elevated">
                 <x-ui.td>
@@ -42,7 +42,7 @@
             </tr>
         @empty
             <x-ui.empty-row :colspan="7" title="No batches"
-                            description="A batch is a programme run. Create one before enrolling anybody." />
+                            description="A batch is a programme run. Create one before adding customers." />
         @endforelse
     </x-ui.table>
 

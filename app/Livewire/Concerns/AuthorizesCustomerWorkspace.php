@@ -75,7 +75,6 @@ trait AuthorizesCustomerWorkspace
     {
         $definitions = [
             'overview' => ['Overview', 'customers.show', null],
-            'enrollments' => ['Programme', 'customers.enrollments', 'customers.view'],
             'forms' => ['Forms', 'customers.forms', 'forms.view'],
             'sessions' => ['Sessions', 'customers.sessions', 'sessions.view'],
             'assignments' => ['Assignments', 'customers.assignments', 'assignments.view'],

@@ -26,8 +26,8 @@
 
     @if ($enrollments->isEmpty())
         <x-ui.card>
-            <x-ui.empty title="Not enrolled"
-                        description="A day plan belongs to an enrolment. Enrol this business in a batch first." />
+            <x-ui.empty title="No batch"
+                        description="A day plan belongs to a programme run, and this business is not in a batch." />
         </x-ui.card>
     @else
         <x-ui.table :headings="['Time', 'Task', 'G', 'C', 'M', 'Status', 'Source', '>Actions']">

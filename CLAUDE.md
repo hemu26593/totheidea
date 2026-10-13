@@ -99,14 +99,19 @@ surface** (ADR-015).
 Programme entry is one action (ADR-016). Every customer here is already a
 confirmed customer, so creating one, entering the person we deal with and
 choosing their batch activates them and leaves them ready to be sent a form
-link: there is no prospect stage to clear, no payment to confirm, no separate
-enrol step and no return trip to add a contact. That contact is created through
+link: there is no prospect stage, no payment, no enrol step and no return trip
+to add a contact. Business name, code, primary contact and batch are all
+required, because nothing downstream supplies a missing one — there is no
+enrolment screen to finish the job on. The contact is created through
 `CustomerContactService` as the primary one — the same flag `RecipientResolver`
-reads — never a second primary mechanism. `Enrollment` is retained unchanged as the ownership spine — twelve
-tables carry a NOT NULL `enrollment_id` — but it is an internal record, not a
-workflow. Do not reintroduce "enrol" as something an operator performs, and do
-not make payment a condition of participation: `payment_due_date` drives
-notification trigger 7 and nothing else.
+reads — never a second primary mechanism.
+
+`Enrollment` is retained unchanged as the ownership spine — twelve tables carry
+a NOT NULL `enrollment_id` — but it is an internal record with no UI at all
+(ADR-017). Do not reintroduce "enrol" as something an operator performs, do not
+add an onboarding or activation step, and do not reintroduce payment: this
+application tracks no payment information, and the column, trigger and config
+that once did are gone.
 
 External participation is two unauthenticated routes, `GET` and `POST`
 `/external/forms/{token}`, and nothing else. The token is the whole authority:

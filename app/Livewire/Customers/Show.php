@@ -147,7 +147,10 @@ class Show extends Component
             'customer' => $customer,
             'tabs' => $this->workspaceTabs($customer),
             'contacts' => $customer->contacts()->whereNull('archived_at')->orderByDesc('is_primary')->orderBy('name')->get(),
-            'enrollments' => $customer->enrollments()->with('batch.program')->latest('enrolled_at')->get(),
+            // Read-only: which batches this business is in. Enrolment is an
+            // internal ownership record, so the screen shows the programme
+            // and the batch and offers no action on the row itself.
+            'programmes' => $customer->enrollments()->with('batch.program')->latest('enrolled_at')->get(),
         ])->layout('components.layouts.app', ['title' => $customer->name]);
     }
 

@@ -8,7 +8,6 @@ use App\Livewire\Customers\ActionPlan;
 use App\Livewire\Customers\Assignments;
 use App\Livewire\Customers\DayPlan;
 use App\Livewire\Customers\Documents;
-use App\Livewire\Customers\Enrollments as EnrollmentsScreen;
 use App\Livewire\Customers\Forms as FormsScreen;
 use App\Livewire\Customers\FundPlan as FundPlanScreen;
 use App\Livewire\Customers\Mmd;
@@ -129,17 +128,6 @@ class CrossCustomerIsolationUatTest extends TestCase
     | An id from the other customer, injected into every screen that takes one
     |--------------------------------------------------------------------------
     */
-
-    #[Test]
-    public function betas_enrollment_cannot_be_completed_through_alphas_enrolments_screen(): void
-    {
-        Livewire::actingAs($this->admin())
-            ->test(EnrollmentsScreen::class, ['customer' => $this->alpha])
-            ->call('complete', $this->betaEnrollment->getKey())
-            ->assertNotFound();
-
-        $this->assertNull($this->betaEnrollment->fresh()->completed_at);
-    }
 
     #[Test]
     public function betas_enrollment_cannot_receive_a_form_started_from_alphas_forms_screen(): void

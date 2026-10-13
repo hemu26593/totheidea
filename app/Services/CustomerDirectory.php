@@ -21,8 +21,17 @@ use Illuminate\Support\Collection;
  */
 class CustomerDirectory
 {
-    /** @var array<int, string> */
-    public const STATUSES = ['prospect', 'active', 'archived'];
+    /**
+     * The statuses a customer can be filtered by.
+     *
+     * `prospect` is gone: there is no onboarding stage in this business, so it
+     * described a state nothing could enter and offering it as a filter sent
+     * staff looking for a queue that does not exist. The migration that
+     * retired it moved the last rows to `active`.
+     *
+     * @var array<int, string>
+     */
+    public const STATUSES = ['active', 'archived'];
 
     public function query(string $search = '', string $status = 'all'): Builder
     {

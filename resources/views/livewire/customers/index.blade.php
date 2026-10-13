@@ -25,7 +25,7 @@
         <x-ui.loading target="search,status" />
     </x-ui.filters>
 
-    <x-ui.table :headings="['Customer', 'Code', 'Status', 'Primary contact', 'Enrolments', '>Actions']">
+    <x-ui.table :headings="['Customer', 'Code', 'Status', 'Primary contact', 'Batches', '>Actions']">
         @forelse ($customers as $customer)
             <tr wire:key="customer-{{ $customer->id }}" class="hover:bg-elevated">
                 <x-ui.td>

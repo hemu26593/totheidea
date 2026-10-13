@@ -186,11 +186,11 @@ class FormLinkService
         // again when it issues; asserting here turns it into a message rather
         // than an exception.
         if ((int) $enrollment->customer_id !== (int) $customer->getKey()) {
-            throw new RuntimeException('That enrolment could not be verified against this business.');
+            throw new RuntimeException('That programme record could not be verified against this business.');
         }
 
         if (! $enrollment->isActive()) {
-            throw new RuntimeException('That enrolment is not active, so there is no form to send against it.');
+            throw new RuntimeException('That programme run is not active, so there is no form to send against it.');
         }
 
         // Shared curriculum, or this business's own - never another's.
@@ -208,7 +208,7 @@ class FormLinkService
         $customer = Customer::query()->find($enrollment->customer_id);
 
         if ($customer === null) {
-            throw new RuntimeException('The business this enrolment belongs to could not be found.');
+            throw new RuntimeException('The business this programme record belongs to could not be found.');
         }
 
         return $customer;

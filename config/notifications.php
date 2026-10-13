@@ -26,7 +26,6 @@ return [
         Triggers\AssignmentOverdueTrigger::class,
         Triggers\DailyDashboardMissingTrigger::class,
         Triggers\DashboardMissedThreeDaysTrigger::class,
-        Triggers\PaymentDueTrigger::class,
         Triggers\AttendanceBelowThresholdTrigger::class,
         Triggers\WeeklyBatchSummaryTrigger::class,
     ],
@@ -57,7 +56,6 @@ return [
         'dashboard_missed_days' => 3,
 
         // Trigger 7 - "on date, then every 2".
-        'payment_due_interval_days' => 2,
 
         // Trigger 9 - "Monday morning". ISO-8601 day of week.
         'weekly_summary_day' => 1,

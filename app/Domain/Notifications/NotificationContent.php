@@ -74,10 +74,6 @@ final readonly class NotificationContent
                 'Your BMP dashboard has been missed for three days',
                 'The daily dashboard has not been filled in for three days running.',
             ),
-            'payment_due' => new self(
-                'A BMP payment is due',
-                'A programme payment is due. Your programme team can confirm the details.',
-            ),
             'attendance_below_threshold' => new self(
                 'Your BMP attendance needs attention',
                 'Your programme attendance needs attention.',

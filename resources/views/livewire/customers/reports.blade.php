@@ -6,14 +6,14 @@
 
     @if ($enrollments->isEmpty())
         <x-ui.card>
-            <x-ui.empty title="Not enrolled"
-                        description="A participant progress report is about an enrolment." />
+            <x-ui.empty title="No batch"
+                        description="A participant progress report is about a programme run, and this business is not in a batch." />
         </x-ui.card>
     @else
         <x-ui.card title="Generate" subtitle="Both formats read the same computed payload, so they always agree."
                    class="mb-5">
             <div class="flex flex-wrap items-end gap-3">
-                <x-ui.field label="Enrolment" class="min-w-64">
+                <x-ui.field label="Batch" class="min-w-64">
                     <x-ui.select wire:model="enrollmentId">
                         @foreach ($enrollments as $enrollment)
                             <option value="{{ $enrollment->id }}">

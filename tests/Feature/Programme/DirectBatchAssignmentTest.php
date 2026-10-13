@@ -14,7 +14,6 @@ use App\Mail\FormLinkMessage;
 use App\Models\AccessGrant;
 use App\Models\Batch;
 use App\Models\Customer;
-use App\Models\CustomerContact;
 use App\Models\Enrollment;
 use App\Models\FormSubmission;
 use App\Models\FormTemplate;
@@ -23,6 +22,7 @@ use App\Models\User;
 use App\Services\CustomerDirectory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -66,6 +66,8 @@ class DirectBatchAssignmentTest extends TestCase
             ->test(ManageCustomer::class)
             ->set('name', 'Alpha Metalworks')
             ->set('code', 'C-ALPHA')
+            ->set('contactName', 'Programme Contact')
+            ->set('contactEmail', 'calpha@example.test')
             ->set('batchId', $batch->getKey())
             ->call('save')
             ->assertHasNoErrors();
@@ -91,6 +93,8 @@ class DirectBatchAssignmentTest extends TestCase
             ->test(ManageCustomer::class)
             ->set('name', 'Beta Textiles')
             ->set('code', 'C-BETA')
+            ->set('contactName', 'Programme Contact')
+            ->set('contactEmail', 'cbeta@example.test')
             ->set('batchId', $batch->getKey())
             ->call('save')
             ->assertHasNoErrors();
@@ -104,32 +108,18 @@ class DirectBatchAssignmentTest extends TestCase
     }
 
     #[Test]
-    public function payment_is_never_a_condition_of_taking_part(): void
+    public function no_payment_information_exists_anywhere_in_customer_creation(): void
     {
-        $batch = $this->batch();
-
-        Livewire::actingAs($this->admin())
-            ->test(ManageCustomer::class)
-            ->set('name', 'Gamma Foods')
-            ->set('code', 'C-GAMMA')
-            ->set('batchId', $batch->getKey())
-            ->call('save')
-            ->assertHasNoErrors();
-
-        $enrollment = Enrollment::query()->sole();
-
-        // No payment date was supplied, and the customer is active regardless.
-        $this->assertNull($enrollment->payment_due_date);
-        $this->assertTrue($enrollment->isActive());
-
-        // And the creation screen neither collects nor mentions payment:
-        // it has no place in programme entry.
+        // The client confirmed this application tracks no payment information.
+        // The screen does not ask for any, the enrolment has nowhere to put
+        // any, and nothing is waiting on one.
         $properties = array_map(
             fn (\ReflectionProperty $p): string => $p->getName(),
             (new \ReflectionClass(ManageCustomer::class))->getProperties(\ReflectionProperty::IS_PUBLIC),
         );
 
         $this->assertNotContains('paymentDueDate', $properties);
+        $this->assertFalse(Schema::hasColumn('enrollments', 'payment_due_date'));
 
         $this->actingAs($this->admin())
             ->get(route('customers.create'))
@@ -148,6 +138,8 @@ class DirectBatchAssignmentTest extends TestCase
             ->test(ManageCustomer::class)
             ->set('name', 'Theta Engineering')
             ->set('code', 'C-THETA')
+            ->set('contactName', 'Programme Contact')
+            ->set('contactEmail', 'ctheta@example.test')
             ->set('batchId', $this->batch()->getKey())
             ->call('save')
             ->assertHasNoErrors();
@@ -164,33 +156,39 @@ class DirectBatchAssignmentTest extends TestCase
     }
 
     #[Test]
-    public function a_customer_archived_before_this_rule_is_left_exactly_as_it_was(): void
+    public function the_prospect_stage_is_gone_and_is_not_offered_as_a_filter(): void
     {
-        // Existing rows are not rewritten by the new rule. A prospect recorded
-        // under the old workflow stays a prospect, and stays listable.
-        $legacy = Customer::factory()->create(['code' => 'C-OLD', 'status' => 'prospect']);
+        // There is no onboarding stage in this business, so `prospect`
+        // described a state nothing could enter. Offering it as a filter sent
+        // staff looking for a queue that does not exist.
+        $this->assertNotContains('prospect', CustomerDirectory::STATUSES);
+        $this->assertSame(['active', 'archived'], CustomerDirectory::STATUSES);
 
-        $this->assertSame('prospect', $legacy->fresh()->status);
-        $this->assertContains('prospect', CustomerDirectory::STATUSES);
+        // Archived customers are untouched: archival is a real end state.
+        $archived = Customer::factory()->create(['code' => 'C-OLD', 'status' => 'archived']);
+
+        $this->assertSame('archived', $archived->fresh()->status);
 
         $this->actingAs($this->admin())
-            ->get(route('customers.show', $legacy))
+            ->get(route('customers.show', $archived))
             ->assertOk();
     }
 
     #[Test]
-    public function a_batch_is_optional_so_a_customer_can_still_be_recorded_first(): void
+    public function a_batch_is_required_because_nothing_would_supply_it_later(): void
     {
+        // There is no enrolment screen to finish the job on, so a customer
+        // saved without a batch would be a record nothing could complete.
         Livewire::actingAs($this->admin())
             ->test(ManageCustomer::class)
             ->set('name', 'Delta Plastics')
             ->set('code', 'C-DELTA')
+            ->set('contactName', 'Programme Contact')
+            ->set('contactEmail', 'cdelta@example.test')
             ->call('save')
-            ->assertHasNoErrors();
+            ->assertHasErrors(['batchId' => 'required']);
 
-        $customer = Customer::query()->where('code', 'C-DELTA')->sole();
-
-        $this->assertSame(0, $customer->enrollments()->count());
+        $this->assertNull(Customer::query()->where('code', 'C-DELTA')->first());
     }
 
     #[Test]
@@ -211,6 +209,8 @@ class DirectBatchAssignmentTest extends TestCase
             ->test(ManageCustomer::class)
             ->set('name', 'Epsilon Tools')
             ->set('code', 'C-EPSILON')
+            ->set('contactName', 'Programme Contact')
+            ->set('contactEmail', 'cepsilon@example.test')
             ->set('batchId', $batch->getKey())
             ->call('save')
             ->assertHasErrors('domain');
@@ -252,6 +252,8 @@ class DirectBatchAssignmentTest extends TestCase
             ->test(ManageCustomer::class)
             ->set('name', 'Zeta Works')
             ->set('code', 'C-ZETA')
+            ->set('contactName', 'Programme Contact')
+            ->set('contactEmail', 'czeta@example.test')
             ->set('batchId', $batch->getKey())
             ->call('save')
             ->assertForbidden();
@@ -295,7 +297,7 @@ class DirectBatchAssignmentTest extends TestCase
         ['customer' => $customer] = $this->assignedCustomerWithForm();
 
         $routes = [
-            'customers.show', 'customers.enrollments', 'customers.forms', 'customers.sessions',
+            'customers.show', 'customers.forms', 'customers.sessions',
             'customers.assignments', 'customers.attendance', 'customers.day-plan',
             'customers.time-grid', 'customers.mmd', 'customers.fund-plan', 'customers.action-plan',
             'customers.business', 'customers.documents', 'customers.notes', 'customers.reports',
@@ -412,24 +414,28 @@ class DirectBatchAssignmentTest extends TestCase
     */
 
     #[Test]
-    public function an_enrolment_made_the_old_way_remains_valid_and_active(): void
+    public function an_enrolment_made_before_this_change_still_anchors_its_programme(): void
     {
-        // A row created before this change - through EnrollmentService, with a
-        // payment date set - must keep working exactly as it did.
+        // Enrolment stayed as the internal ownership record, so a row created
+        // the old way keeps working: it is still active, still resolvable by
+        // the screens, and its batch still shows on the customer.
         $customer = Customer::factory()->create(['code' => 'C-LEGACY']);
         $batch = $this->batch();
 
         $enrollment = Enrollment::factory()->create([
             'customer_id' => $customer->getKey(),
             'batch_id' => $batch->getKey(),
-            'payment_due_date' => now()->addDays(30)->toDateString(),
         ]);
 
         $this->assertTrue($enrollment->fresh()->isActive());
-        $this->assertNotNull($enrollment->fresh()->payment_due_date);
+        $this->assertSame(
+            (int) $enrollment->getKey(),
+            (int) $customer->enrollments()->where('status', 'enrolled')->value('id'),
+        );
 
+        // The batch is reported on the customer's own page, read-only.
         $this->actingAs($this->admin())
-            ->get(route('customers.enrollments', $customer))
+            ->get(route('customers.show', $customer))
             ->assertOk()
             ->assertSee($batch->name);
     }
@@ -476,21 +482,20 @@ class DirectBatchAssignmentTest extends TestCase
     {
         $batch = $this->batch();
 
+        // The screen creates the business, its primary contact and its place
+        // in the batch in one operation - which is the whole of the workflow
+        // under test, so the fixture uses it rather than going around it.
         Livewire::actingAs($this->admin())
             ->test(ManageCustomer::class)
             ->set('name', $name)
             ->set('code', $code)
+            ->set('contactName', 'Programme Contact')
+            ->set('contactEmail', strtolower(str_replace('-', '', $code)).'@example.test')
             ->set('batchId', $batch->getKey())
             ->call('save')
             ->assertHasNoErrors();
 
         $customer = Customer::query()->where('code', $code)->sole();
-
-        CustomerContact::factory()->create([
-            'customer_id' => $customer->getKey(),
-            'is_primary' => true,
-            'email' => strtolower(str_replace('-', '', $code)).'@example.test',
-        ]);
 
         $builder = app(FormBuilderService::class);
 

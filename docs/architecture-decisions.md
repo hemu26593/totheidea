@@ -761,11 +761,10 @@ a row would quietly defeat the reason the block exists.
 
 ### Consequences
 
-`payment_due_date` and `PaymentDueTrigger` are untouched: they are a reminder,
-not a prerequisite, and removing them would delete a live SOW requirement to fix
-a gate that never existed. The field is absent from customer creation and stays
-on the Programme screen, worded so it cannot be mistaken for a condition of
-taking part.
+`payment_due_date` and `PaymentDueTrigger` were kept at the time, on the
+grounds that they were a reminder rather than a prerequisite. **ADR-017
+supersedes that**: the client has since confirmed the application tracks no
+payment information at all, and both are gone.
 
 The `prospect` status remains a valid value and stays in
 `CustomerDirectory::STATUSES`, so rows created under the previous rule are
@@ -773,3 +772,64 @@ unchanged and still listable. The column default is untouched; status is set on
 the insert instead, so nothing outside `CustomerService` changes behaviour.
 
 No migration was required, and no existing data was rewritten.
+
+
+---
+
+## ADR-017: No onboarding, no enrolment workflow, no payment information
+
+**Status:** Accepted
+**Date:** 2026-10-10
+
+### Context
+
+ADR-016 made batch assignment the whole of programme entry but stopped short of
+removing the machinery behind it. The Programme tab still exposed enrol,
+withdraw and complete as actions; `prospect` still existed as a customer status;
+and `payment_due_date` survived on the argument that a reminder is not a gate.
+
+The client has now settled all three. Every customer added to this system is
+already onboarded, confirmed and in a batch. There is no prospect queue, no
+enrolment step, and no payment information this application needs to hold.
+
+### Decision
+
+**Enrolment is now wholly internal.** The Livewire component, its view, its
+route and its workspace tab are deleted. A customer's batch is shown read-only
+on their own page, with no action on the row. Enrolment itself is retained
+unchanged as the ownership spine - twelve tables carry a NOT NULL
+`enrollment_id` and resolve customer isolation through it, and it is what keeps
+a repeat participant's two runs apart - but `CustomerService::createInBatch` is
+now the only thing that creates one.
+
+**The batch and the primary contact are required when a customer is created.**
+This follows from the deletion rather than decorating it: with no enrolment
+screen, nothing downstream would supply a missing batch, and a business with no
+contact cannot be sent a form link. Accepting either would create a record the
+application has no way to finish.
+
+**`prospect` is retired.** It described a stage this business does not have, and
+offering it as a filter sent staff looking for a queue that does not exist. The
+column default becomes `active` and existing non-archived rows are moved to
+`active`. Archived customers are deliberately excluded: archival is a real end
+state, and reviving one would lose history.
+
+**Payment tracking is gone entirely** - the column, the trigger, its content,
+its configuration and its tests.
+
+### Consequences
+
+`EnrollmentService::withdraw()` and `::complete()` keep their tests but have no
+caller in the UI. They are deliberately left: `enrollments.status` is read
+across the application, and deleting its only writers would freeze the column
+at `enrolled` forever - a larger semantic change than was asked for, and one
+that would have to be undone the first time a participant withdraws.
+
+Historical `notification_dispatches` rows with `trigger_key = 'payment_due'`
+survive and still render: `NotificationContent::for()` falls back to a generic
+message for a key it does not recognise, so removing the trigger orphans
+nothing.
+
+The create-customer screen now refuses when no batch exists, pointing at the
+Batches screen. That is a real ordering requirement, not a defect: a programme
+with no batch has nowhere to put a participant.
