@@ -120,6 +120,31 @@ form or submission id is accepted from the request, and `GET` consumes nothing
 while only submitting spends a use. This is a capability, not an account —
 there is still no customer login, password, guard, session or dashboard.
 
+The **Participant Business Analysis Questionnaire** (ADR-018) is the client's
+own instrument and real reference content, published by
+`ParticipantQuestionnaireSeeder` from `DatabaseSeeder` — not demonstration
+data. It is one global template answered by every business, so there is no
+per-customer assignment row: what makes it *this* business's form is the scoped
+grant, issued by `ParticipantQuestionnaire::assign()` when a customer is
+entered into a batch and refused while a live link already exists. Nothing on
+it is scored, and only Section 1 is required, because the source document
+marks nothing mandatory. A published version is immutable — change the
+instrument by authoring the next version, never by editing rows.
+
+`FormLinkService::issue()` returns the link's URL so the operator can copy it,
+which ADR-018 adopted deliberately in place of the earlier "never returned"
+rule: `MAIL_MAILER` is `log` by default here, and a link nobody can copy is a
+link nobody can send. The plaintext token still lives for one response only and
+reaches no row, no log and no job payload. `send()` is unchanged, and
+`deliveryIsConfigured()` treats `log` and `array` as what they are — not
+transports. Do not persist, log or re-display an issued URL.
+
+`questions.visible_when` now has exactly one evaluator, `QuestionVisibility`: a
+two-field rule, decoded and compared, never executed. A question whose
+condition is unmet is not shown, is not an outstanding required answer, and has
+any stored answer cleared by `SubmissionService::pruneHiddenAnswers()`. Do not
+grow it into an expression language.
+
 Livewire components are the whole UI layer. They call domain services and never
 reimplement a rule: a screen that computes a figure the domain does not compute
 is a bug, not a feature.
@@ -139,6 +164,11 @@ an answer to any of them:
 - **G / C / M.** Carried verbatim as column headings. No expansion is shown.
 - **The `diagnostic` report.** Part of the report vocabulary, with no builder.
   The Reports screen offers only what `ReportRegistry` actually implements.
+- **The questionnaire's "Business Readiness Score".** Section 12 of the
+  participant questionnaire is a heading carried verbatim. Its two questions
+  are categorical, no mapping has been defined for Stable / Growing / Scaling /
+  Expansion Ready or Operator / Manager / Leader / Visionary, and no readiness
+  figure is computed or displayed anywhere.
 
 ### Livewire naming trap
 

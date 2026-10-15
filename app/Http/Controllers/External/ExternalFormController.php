@@ -6,6 +6,7 @@ namespace App\Http\Controllers\External;
 
 use App\Domain\Access\ExternalFormSubmissionService;
 use App\Domain\Forms\AnswerValueMapper;
+use App\Domain\Forms\QuestionVisibility;
 use App\Exceptions\AccessGrantDeniedException;
 use App\Http\Controllers\Controller;
 use App\Models\FormSubmission;
@@ -52,6 +53,7 @@ class ExternalFormController extends Controller
     public function __construct(
         private readonly ExternalFormSubmissionService $forms,
         private readonly AnswerValueMapper $mapper,
+        private readonly QuestionVisibility $visibility,
     ) {}
 
     /**
@@ -84,6 +86,11 @@ class ExternalFormController extends Controller
             $submission = $this->forms->open($token, $request->ip());
 
             $this->recordAnswers($request, $token, $submission);
+
+            // A conditional question the participant has just stopped
+            // revealing keeps no answer. Done on every post, save or submit,
+            // so a saved draft is as truthful as a submitted one.
+            $this->forms->pruneHidden($token, $submission, $request->ip());
 
             if (! $submitting) {
                 return redirect()
@@ -159,6 +166,7 @@ class ExternalFormController extends Controller
         $version = $submission->formVersion;
 
         [$answers, $selections] = $this->mapper->existingAnswers($submission);
+        $sections = $version?->sections()->with(['questions.options'])->get() ?? collect();
 
         return view('external.form', [
             // Passed through so the form can post back to the same link. It is
@@ -168,11 +176,45 @@ class ExternalFormController extends Controller
             'version' => $version,
             // The grant's own customer. Nothing else about them is exposed.
             'businessName' => $submission->enrollment?->customer?->name,
-            'sections' => $version?->sections()->with(['questions.options'])->get() ?? collect(),
+            'sections' => $sections,
             'answers' => $answers,
             'selections' => $selections,
+            // Which questions are conditional, what reveals them, and whether
+            // they are revealed right now. Presentation only: the engine, not
+            // the page, decides what a hidden answer is worth.
+            'conditions' => $this->conditions($sections, $selections),
             'missingRequired' => $missingRequired,
         ]);
+    }
+
+    /**
+     * The conditional questions on this form, keyed by question id.
+     *
+     * @param  iterable<int, mixed>  $sections
+     * @param  array<int, array<int, int>>  $selections
+     * @return array<int, array{question_id: int, option_ids: list<int>, visible: bool}>
+     */
+    private function conditions($sections, array $selections): array
+    {
+        $conditions = [];
+
+        foreach ($sections as $section) {
+            foreach ($section->questions as $question) {
+                $revealedBy = $this->visibility->revealedBy($question);
+
+                if ($revealedBy === null) {
+                    continue;
+                }
+
+                $conditions[(int) $question->getKey()] = [
+                    'question_id' => $revealedBy['question_id'],
+                    'option_ids' => $revealedBy['option_ids'],
+                    'visible' => $this->visibility->isVisible($question, $selections),
+                ];
+            }
+        }
+
+        return $conditions;
     }
 
     /**

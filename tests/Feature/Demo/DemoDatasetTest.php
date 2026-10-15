@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Demo;
 
+use App\Domain\Forms\ParticipantQuestionnaire;
 use App\Domain\Notifications\RecipientResolver;
 use App\Enums\UserRole;
 use App\Models\AccessGrant;
@@ -164,7 +165,15 @@ class DemoDatasetTest extends TestCase
     {
         $this->seedDemo();
 
-        $this->assertSame(5, FormTemplate::query()->count());
+        // Five demonstration instruments, plus the client's own Participant
+        // Business Analysis Questionnaire - which is real reference content,
+        // published by the same seeder a production deployment runs.
+        $this->assertSame(6, FormTemplate::query()->count());
+
+        $this->assertTrue(
+            FormTemplate::query()->where('key', ParticipantQuestionnaire::KEY)->exists(),
+            'The participant questionnaire must be present after a demo reset, not only after db:seed.',
+        );
 
         foreach (FormTemplate::query()->get() as $template) {
             $published = $template->publishedVersion();

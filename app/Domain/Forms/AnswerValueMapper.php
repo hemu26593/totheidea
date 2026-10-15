@@ -30,6 +30,8 @@ use Illuminate\Support\Collection;
  */
 class AnswerValueMapper
 {
+    public function __construct(private readonly QuestionVisibility $visibility) {}
+
     /**
      * Read a stored answer back into the shape its control expects.
      *
@@ -136,17 +138,28 @@ class AnswerValueMapper
     /**
      * The required questions this submission has not answered.
      *
+     * A QUESTION THAT IS NOT SHOWN IS NOT OUTSTANDING. A conditional question
+     * whose condition is unmet was never put to the participant, so demanding
+     * an answer to it would make the form impossible to submit - and the
+     * participant would be told to answer something they cannot see.
+     *
      * @return Collection<int, Question>
      */
     public function unansweredRequiredQuestions(FormSubmission $submission): Collection
     {
-        $answered = $submission->answers()->get()->keyBy('question_id');
+        $answers = $submission->answers()->with('answerOptions')->get();
+        $answered = $answers->keyBy('question_id');
+        $selections = $this->visibility->selectionsFrom($answers);
 
         return $submission->formVersion
             ->questions()
             ->where('is_required', true)
             ->get()
-            ->filter(function (Question $question) use ($answered): bool {
+            ->filter(function (Question $question) use ($answered, $selections): bool {
+                if (! $this->visibility->isVisible($question, $selections)) {
+                    return false;
+                }
+
                 $answer = $answered[$question->getKey()] ?? null;
 
                 if ($answer === null) {

@@ -32,6 +32,7 @@ use App\Models\SessionAttendance;
 use App\Models\SessionInstance;
 use App\Models\SubmissionScore;
 use App\Models\TimeGridEntry;
+use Database\Seeders\ParticipantQuestionnaireSeeder;
 use Illuminate\Console\OutputStyle;
 use Illuminate\Database\Seeder;
 
@@ -58,6 +59,11 @@ class DemoSeeder extends Seeder
         DemoTeamSeeder::class,
         DemoProgramSeeder::class,
         DemoFormSeeder::class,
+        // The client's own instrument, not demonstration content: demo:reset
+        // clears form_templates, so it is republished here as well as by
+        // DatabaseSeeder. Before the customers, so each one is given its link
+        // on entry exactly as a real customer would be.
+        ParticipantQuestionnaireSeeder::class,
         DemoCustomerSeeder::class,
         DemoSessionSeeder::class,
         DemoAssignmentSeeder::class,

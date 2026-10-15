@@ -43,6 +43,11 @@
                            :subtitle="$section->description">
                     <div class="space-y-5">
                         @foreach ($section->questions as $question)
+                            {{-- A conditional question whose condition is unmet was not
+                                 asked, so it is not shown. Its answer is cleared by the
+                                 form engine, not by hiding it here. --}}
+                            @continue (in_array((int) $question->id, $hiddenQuestions, true))
+
                             <div wire:key="question-{{ $question->id }}" class="border-b border-line pb-4 last:border-0 last:pb-0">
                                 <x-ui.field :label="$question->label"
                                             :required="(bool) $question->is_required"

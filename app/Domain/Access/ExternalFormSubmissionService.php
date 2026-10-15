@@ -94,6 +94,24 @@ class ExternalFormSubmissionService
     }
 
     /**
+     * Clear answers to questions this participant is no longer being shown.
+     *
+     * Adds no rule of its own: the form engine decides what "not shown" means
+     * and does the clearing. What this adds is the boundary - the token is
+     * presented again and the submission re-proved to be the grant's, exactly
+     * as for every other call here.
+     */
+    public function pruneHidden(string $token, FormSubmission $submission, ?string $ip = null): int
+    {
+        $scope = $this->redeemer->authorize($token, GrantAbility::CompleteForm, ip: $ip);
+        $version = $this->assertSubjectIsAFormVersion($scope);
+
+        $this->assertSubmissionIsInScope($submission, $scope, $version);
+
+        return $this->submissions->pruneHiddenAnswers($submission);
+    }
+
+    /**
      * Submit. THIS is what consumes a use of the grant.
      */
     public function submit(string $token, FormSubmission $submission, ?string $ip = null): FormSubmission

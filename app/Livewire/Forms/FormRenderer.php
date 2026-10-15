@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Livewire\Forms;
 
 use App\Domain\Forms\AnswerValueMapper;
+use App\Domain\Forms\QuestionVisibility;
 use App\Domain\Forms\SubmissionService;
 use App\Domain\Scoring\ScoringService;
 use App\Enums\QuestionType;
 use App\Livewire\Concerns\ReportsDomainFailures;
 use App\Models\FormSubmission;
+use App\Models\FormVersion;
 use App\Models\Question;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Locked;
@@ -88,6 +90,12 @@ class FormRenderer extends Component
                 $mapper->scalarValue($question, $this->answers[$question->getKey()] ?? null),
                 $mapper->selectedOptions($question, (array) ($this->selections[$question->getKey()] ?? [])),
             );
+
+            // Changing a controlling answer can hide a conditional question
+            // that already has one. The engine clears it, so a retracted
+            // answer does not survive as though it had been given. A form with
+            // no conditional questions does nothing here.
+            $submissions->pruneHiddenAnswers($submission);
         }, 'Answer saved.');
     }
 
@@ -97,7 +105,12 @@ class FormRenderer extends Component
 
         $this->authorize('update', $submission);
 
-        $missing = app(AnswerValueMapper::class)->unansweredRequiredQuestions($submission);
+        // Before the check, not after: a required question that is no longer
+        // shown must not hold up a submission, and an answer to one that is
+        // hidden must not travel with it.
+        $submissions->pruneHiddenAnswers($submission);
+
+        $missing = app(AnswerValueMapper::class)->unansweredRequiredQuestions($submission->fresh());
 
         if ($missing->isNotEmpty()) {
             $this->addError('domain', sprintf(
@@ -150,7 +163,46 @@ class FormRenderer extends Component
             'sections' => $version?->sections()->with(['questions.options'])->get() ?? collect(),
             'scores' => $submission->scores()->with('skillArea:id,name')->latest('computed_at')->get(),
             'questionTypes' => QuestionType::class,
+            // Conditional questions whose condition is unmet. Presentation
+            // only: nothing is authorized or validated by their absence.
+            'hiddenQuestions' => $this->concealedQuestionIds($version),
         ])->layout('components.layouts.app', ['title' => $version?->formTemplate?->name ?? 'Form']);
+    }
+
+    /**
+     * The conditional questions the current answers do not reveal.
+     *
+     * Read from the component's own selections rather than from the database,
+     * so a choice toggles the dependent question in the same round trip that
+     * saved it.
+     *
+     * NOT named hiddenQuestions(): a private helper sharing a name with a
+     * public property is how a Livewire lifecycle hook gets registered by
+     * accident.
+     *
+     * @return array<int, int>
+     */
+    private function concealedQuestionIds(?FormVersion $version): array
+    {
+        if ($version === null) {
+            return [];
+        }
+
+        $visibility = app(QuestionVisibility::class);
+
+        $selections = [];
+
+        foreach ($this->selections as $questionId => $optionIds) {
+            $selections[(int) $questionId] = array_map('intval', (array) $optionIds);
+        }
+
+        return $version->questions()
+            ->whereNotNull('visible_when')
+            ->get()
+            ->reject(fn (Question $question): bool => $visibility->isVisible($question, $selections))
+            ->pluck('id')
+            ->map(fn ($id): int => (int) $id)
+            ->all();
     }
 
     private function submission(): FormSubmission

@@ -115,6 +115,51 @@ class Forms extends Component
     }
 
     /**
+     * Issue a fresh link and show it, so staff can copy or share it
+     * themselves.
+     *
+     * The same issue as sending, with the email left off: this deployment has
+     * no mail transport configured, so handing the operator the URL is what
+     * "send the business their form" actually means here. Authorized
+     * identically to sending - it mints the same capability.
+     *
+     * It REPLACES whatever link was live, because that is the only lifecycle a
+     * link has: the plaintext cannot be recovered, so "show me the existing
+     * one" is not a thing that can exist. A business therefore never holds two
+     * working links to the same form.
+     */
+    public function copyFormLink(int $enrollmentId, int $templateId, FormLinkService $links): void
+    {
+        $this->authorize('create', AccessGrant::class);
+
+        $enrollment = $this->enrollmentInWorkspace($enrollmentId);
+        $template = $this->templateInScope($templateId);
+
+        $link = null;
+
+        $issued = $this->runGuarded(function () use ($links, $enrollment, $template, &$link): void {
+            $link = $links->issue($enrollment, $template, auth()->user(), deliver: false);
+        }, 'Form link issued.');
+
+        if (! $issued || $link === null) {
+            return;
+        }
+
+        // Flashed, not a property: a component property would be sent back to
+        // the browser on every subsequent update, which is a longer life than
+        // a one-time token should have.
+        session()->flash('issued_link', [
+            'url' => $link->url,
+            'form' => (string) $template->name,
+            'contact' => (string) ($link->contact?->email ?? ''),
+            'expires_at' => $link->expiresAt()?->format('d M Y'),
+            'delivered' => false,
+        ]);
+
+        session()->flash('status', 'A fresh link was issued. Copy it below — any previous link for this form no longer works.');
+    }
+
+    /**
      * Withdraw the live link for this form.
      */
     public function revokeFormLink(int $enrollmentId, int $templateId, FormLinkService $links): void
@@ -154,6 +199,10 @@ class Forms extends Component
                 ->get(),
             'enrollments' => $customer->enrollments()->with('batch:id,name,code')->get(),
             'templates' => $this->availableTemplates($customer),
+            // Whether this deployment can email at all. Sending is offered
+            // only when there is something to send with; otherwise the honest
+            // action is to hand the operator the link.
+            'canEmail' => app(FormLinkService::class)->deliveryIsConfigured(),
         ])->layout('components.layouts.app', ['title' => $customer->name.' — Forms']);
     }
 

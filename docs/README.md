@@ -61,7 +61,7 @@ cp .env.example .env
 php artisan key:generate
 touch database/database.sqlite
 php artisan migrate
-php artisan db:seed          # roles, permissions, and the initial Super Admin
+php artisan db:seed          # roles, permissions, the Super Admin, the questionnaire
 npm install
 npm run build
 ```
@@ -69,6 +69,30 @@ npm run build
 Seeding is not optional: without `RolePermissionSeeder` no roles or permissions
 exist, and without `SuperAdminSeeder` there is no account that can sign in. See
 [First sign-in](#first-sign-in) for setting the initial credentials.
+
+`db:seed` also publishes the client's own instrument — the Participant Business
+Analysis Questionnaire, twelve sections and forty-nine questions — which every
+new participant is given on entry. It can be run on its own, and is safe to
+run again:
+
+```bash
+php artisan db:seed --class=ParticipantQuestionnaireSeeder
+```
+
+It adds nothing twice and rewrites nothing: a published form version is
+immutable, because submissions bind to it as the record of what was asked. If
+the questionnaire needs to change, author the next version on **Form
+templates** and publish it; outstanding links keep asking the version they were
+issued against.
+
+**Giving a participant their questionnaire.** Creating a customer in a batch
+issues their link and shows it on the customer's page, once — the plaintext
+token is stored nowhere, so it cannot be shown again. Copy it from there, or
+issue a fresh one from the customer's **Forms** tab with *Get link to copy*. A
+message is emailed as well only when a real `MAIL_MAILER` is configured; `log`
+and `array` are not transports, so nothing is pushed through an unconfigured
+service and the operator sends the link themselves. Issuing again always
+replaces the previous link.
 
 ## How to run the application
 
@@ -112,7 +136,8 @@ process rules in the root `CLAUDE.md`.
 
 One command fills a local database with a realistic Business Mastery Programme
 — twelve fictional Gujarat manufacturing businesses, their contacts, four
-batches, the six-session curriculum, five published forms, submissions,
+batches, the six-session curriculum, six published forms (five demonstration
+instruments and the client's real questionnaire), submissions,
 attendance, assignments, trackers and reports:
 
 ```bash
